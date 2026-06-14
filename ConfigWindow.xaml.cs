@@ -7,7 +7,10 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Input;
+using System.Windows.Ink;
 using Microsoft.Win32;
 using WpfAnimatedGif;
 
@@ -72,6 +75,11 @@ namespace VirtualPeto
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
+    internal struct IntPoint
+    {
+        public int X, Y;
+        public IntPoint(int x, int y) { X = x; Y = y; }
+    }
 
     // === MAIN WINDOW CLASS ===
 
@@ -88,11 +96,14 @@ namespace VirtualPeto
         private readonly string[] validImages = { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".ico", ".tiff" };
         private readonly string[] validVideos = { ".mp4", ".avi", ".mkv", ".webm", ".mov", ".wmv" };
 
+        // Variables temporales de herramientas
+        private string[] selectedToolsGifImages = Array.Empty<string>();
+        private string selectedToolsBgImage = string.Empty;
+
         public ConfigWindow()
         {
             InitializeComponent();
             
-            // Persistent Path in Documents
             string baseDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "VirtualPeto");
             
             libraryPath = Path.Combine(baseDataPath, "Library");
@@ -122,10 +133,8 @@ namespace VirtualPeto
                 image.StreamSource = memStream;                  
                 image.EndInit();
                 
-                if (!path.ToLower().EndsWith(".gif"))
-                {
-                    image.Freeze(); 
-                }
+                if (!path.ToLower().EndsWith(".gif")) image.Freeze(); 
+                
                 return image;
             }
             catch { return null; }
@@ -147,7 +156,7 @@ namespace VirtualPeto
             }
         }
 
-        // === LIBRARY LOGIC (IMAGES & VIDEOS) ===
+        // === LIBRARY LOGIC ===
 
         private void LoadLibrary()
         {
@@ -168,13 +177,42 @@ namespace VirtualPeto
                     };
                 }).ToList();
             
-            UpdateLibraryList(fullLibraryList);
+            ApplyLibraryFilters();
         }
 
-        private void UpdateLibraryList(List<LibraryItem> list)
+        private void ApplyLibraryFilters()
         {
+            if (fullLibraryList == null || LstLibrary == null) return;
+
+            var filteredList = fullLibraryList.AsEnumerable();
+            string searchTxt = TxtSearchLibrary?.Text?.ToLower().Trim() ?? "";
+            if (!string.IsNullOrEmpty(searchTxt))
+            {
+                filteredList = filteredList.Where(m => m.Name.ToLower().Contains(searchTxt));
+            }
+            if (CmbFilterType != null && CmbFilterType.SelectedItem is ComboBoxItem selectedItem)
+            {
+                string type = selectedItem.Content.ToString()!;
+                if (type == "Images")
+                    filteredList = filteredList.Where(m => !m.IsVideo && !m.Name.ToLower().EndsWith(".gif"));
+                else if (type == "GIFs")
+                    filteredList = filteredList.Where(m => !m.IsVideo && m.Name.ToLower().EndsWith(".gif"));
+                else if (type == "Videos")
+                    filteredList = filteredList.Where(m => m.IsVideo);
+            }
+
+            if (ChkFilterActive != null && ChkFilterActive.IsChecked == true)
+            {
+                filteredList = filteredList.Where(m => m.IsActive);
+            }
+
             LstLibrary.ItemsSource = null;
-            LstLibrary.ItemsSource = list;
+            LstLibrary.ItemsSource = filteredList.ToList();
+        }
+
+        private void Filters_Changed(object sender, RoutedEventArgs e)
+        {
+            ApplyLibraryFilters();
         }
 
         private void BtnAddLibrary_Click(object sender, RoutedEventArgs e)
@@ -202,7 +240,7 @@ namespace VirtualPeto
 
                 if (LstLibrary.SelectedItem == null || !(LstLibrary.SelectedItem is LibraryItem selected))
                 {
-                    TxtSelectedLibraryName.Text = "Ninguna seleccionada";
+                    TxtSelectedLibraryName.Text = "None selected";
                     ImageBehavior.SetAnimatedSource(ImgLibraryPreview, null);
                     ImgLibraryPreview.Source = null;
                     ImgLibraryPreview.Visibility = Visibility.Visible;
@@ -263,7 +301,7 @@ namespace VirtualPeto
         {
             if (LstLibrary.SelectedItem is LibraryItem selected)
             {
-                if (MessageBox.Show($"¿Eliminar {selected.Name}?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                if (MessageBox.Show($"Delete {selected.Name}?", "Confirm", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                 {
                     try
                     {
@@ -320,17 +358,26 @@ namespace VirtualPeto
                     else { newWindow.PetImage.Source = imgSource; }
                 }
 
-                newWindow.Closed += (s, args) => { selected.IsActive = false; activeLibraryWindows.Remove(selected); };
+                newWindow.Closed += (s, args) => 
+                { 
+                    selected.IsActive = false; 
+                    activeLibraryWindows.Remove(selected); 
+                    ApplyLibraryFilters(); 
+                };
+                
                 activeLibraryWindows.Add(selected, newWindow);
                 selected.IsActive = true;
                 newWindow.Show();
+                ApplyLibraryFilters(); 
             }
         }
 
-        private void TxtSearchLibrary_TextChanged(object sender, TextChangedEventArgs e)
+        private void BtnCloseLibrary_Click(object sender, RoutedEventArgs e)
         {
-            string txt = TxtSearchLibrary.Text.ToLower().Trim();
-            UpdateLibraryList(string.IsNullOrEmpty(txt) ? fullLibraryList : fullLibraryList.Where(m => m.Name.ToLower().Contains(txt)).ToList());
+            if (LstLibrary.SelectedItem is LibraryItem selected && activeLibraryWindows.ContainsKey(selected))
+            {
+                activeLibraryWindows[selected].Close();
+            }
         }
 
         // === SMART PETS LOGIC ===
@@ -405,7 +452,7 @@ namespace VirtualPeto
             {
                 if (LstPets.SelectedItem == null || !(LstPets.SelectedItem is PetItem selected))
                 {
-                    TxtSelectedPetName.Text = "Ninguna seleccionada";
+                    TxtSelectedPetName.Text = "None selected";
                     ImageBehavior.SetAnimatedSource(ImgPetPreview, null);
                     ImgPetPreview.Source = null;
                     TxtEmptyPetPreview.Visibility = Visibility.Visible;
@@ -436,7 +483,7 @@ namespace VirtualPeto
         {
             if (LstPets.SelectedItem is PetItem selected)
             {
-                if (MessageBox.Show($"¿Eliminar mascota {selected.Name}?", "Confirmar", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                if (MessageBox.Show($"Delete {selected.Name}?", "Confirm", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                 {
                     try
                     {
@@ -483,6 +530,14 @@ namespace VirtualPeto
                 activePetsWindows.Add(selected, newWindow);
                 selected.IsActive = true;
                 newWindow.Show();
+            }
+        }
+
+        private void BtnClosePet_Click(object sender, RoutedEventArgs e)
+        {
+            if (LstPets.SelectedItem is PetItem selected && activePetsWindows.ContainsKey(selected))
+            {
+                activePetsWindows[selected].Close();
             }
         }
 
@@ -552,12 +607,402 @@ namespace VirtualPeto
             }
         }
 
+        // Tools logic
+
+        private void BtnToolsSelectGifImages_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Multiselect = true,
+                Filter = "Images (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                selectedToolsGifImages = openFileDialog.FileNames;
+                TxtToolsGifCount.Text = $"{selectedToolsGifImages.Length} images selected";
+            }
+        }
+
+        private void BtnToolsGenerateGif_Click(object sender, RoutedEventArgs e)
+        {
+            if (selectedToolsGifImages == null || selectedToolsGifImages.Length < 2)
+            {
+                MessageBox.Show("Please select at least 2 images to create a GIF animation.", "GIF Creator", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            MessageBox.Show("To compile GIFs natively in C#, we need to install the 'Magick.NET-Q8-AnyCPU' NuGet package.\n\nTell me: 'Let's install Magick.NET' and I'll give you the instructions to make this button work!", "Library Needed", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void BtnToolsSelectBgImage_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Filter = "Images (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                selectedToolsBgImage = openFileDialog.FileName;
+                TxtToolsBgImageName.Text = Path.GetFileName(selectedToolsBgImage);
+                ImgToolsBgPreview.Source = LoadImageToMemory(selectedToolsBgImage);
+            }
+        }
+
+        private void BtnToolsRemoveBg_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(selectedToolsBgImage) || !File.Exists(selectedToolsBgImage))
+            {
+                MessageBox.Show("Please select an image first.", "Background Remover", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            BackgroundEditorWindow editor = new BackgroundEditorWindow(selectedToolsBgImage, libraryPath);
+            editor.Closed += (s, args) => LoadLibrary(); 
+            editor.ShowDialog();
+        }
+
         // === SETTINGS ===
 
         private void BtnClearCache_Click(object sender, RoutedEventArgs e)
         {
             try { GC.Collect(); GC.WaitForPendingFinalizers(); MessageBox.Show("Cache cleared.", "Info", MessageBoxButton.OK, MessageBoxImage.Information); }
             catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
+        }
+    }
+    internal class BackgroundEditorWindow : Window
+    {
+        private string originalPath;
+        private string libraryPath;
+        private WriteableBitmap editableBitmap = null!;
+        private byte[] originalPixels = null!;
+        private int width, height, stride;
+        private Stack<byte[]> undoStack = new Stack<byte[]>();
+        private bool isDrawing = false;
+        private Image imgEditor = null!;
+        private Slider sldTolerance = null!;
+        private Slider sldBrushSize = null!;
+        private RadioButton rbMagic = null!;
+        private RadioButton rbErase = null!;
+        private RadioButton rbRestore = null!;
+        private Button btnUndo = null!;
+
+        public BackgroundEditorWindow(string imagePath, string saveDirectory)
+        {
+            originalPath = imagePath;
+            libraryPath = saveDirectory;
+
+            Title = $"Editor de Fondo: {Path.GetFileName(imagePath)}";
+            Width = 1000;
+            Height = 700;
+            WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            Background = new SolidColorBrush(Color.FromRgb(15, 15, 20));
+            Foreground = Brushes.White;
+
+            SetupUI();
+            InitializeImage();
+        }
+
+        private void InitializeImage()
+        {
+            try
+            {
+                BitmapImage inputImage = new BitmapImage(new Uri(originalPath));
+                FormatConvertedBitmap converted = new FormatConvertedBitmap(inputImage, PixelFormats.Bgra32, null, 0);
+
+                width = converted.PixelWidth;
+                height = converted.PixelHeight;
+                stride = width * 4;
+                originalPixels = new byte[height * stride];
+                converted.CopyPixels(originalPixels, stride, 0);
+
+                editableBitmap = new WriteableBitmap(width, height, converted.DpiX, converted.DpiY, PixelFormats.Bgra32, null);
+                editableBitmap.WritePixels(new Int32Rect(0, 0, width, height), (byte[])originalPixels.Clone(), stride, 0);
+
+                imgEditor.Source = editableBitmap;
+            }
+            catch (Exception ex) { MessageBox.Show("Error loading image for editor: " + ex.Message); Close(); }
+        }
+
+        private void SetupUI()
+        {
+            Grid mainGrid = new Grid();
+            mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            mainGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            Content = mainGrid;
+
+            ScrollViewer scrollViewer = new ScrollViewer
+            {
+                Background = Brushes.Black,
+                Margin = new Thickness(10),
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+            };
+            mainGrid.Children.Add(scrollViewer);
+
+            Grid centerGrid = new Grid { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            scrollViewer.Content = centerGrid;
+
+            imgEditor = new Image { Stretch = Stretch.Uniform };
+            centerGrid.Children.Add(imgEditor);
+
+            ScaleTransform zoomTransform = new ScaleTransform(1.0, 1.0);
+            centerGrid.LayoutTransform = zoomTransform;
+
+
+            scrollViewer.PreviewMouseWheel += (s, e) =>
+            {
+                e.Handled = true; 
+                double zoomFactor = e.Delta > 0 ? 1.2 : 1 / 1.2;
+                zoomTransform.ScaleX = Math.Max(0.1, Math.Min(20.0, zoomTransform.ScaleX * zoomFactor));
+                zoomTransform.ScaleY = Math.Max(0.1, Math.Min(20.0, zoomTransform.ScaleY * zoomFactor));
+            };
+
+
+            imgEditor.PreviewMouseLeftButtonDown += ImgEditor_MouseDown;
+            imgEditor.PreviewMouseMove += ImgEditor_MouseMove;
+            imgEditor.PreviewMouseLeftButtonUp += ImgEditor_MouseUp;
+
+
+            Border toolBorder = new Border
+            {
+                Background = new SolidColorBrush(Color.FromRgb(26, 26, 36)),
+                Padding = new Thickness(15),
+                BorderThickness = new Thickness(0, 1, 0, 0),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(51, 51, 51))
+            };
+            Grid.SetRow(toolBorder, 1);
+            mainGrid.Children.Add(toolBorder);
+
+            StackPanel toolStack = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+            toolBorder.Child = toolStack;
+
+            btnUndo = new Button { Content = "↩ Undo", IsEnabled = false, Padding = new Thickness(10, 5, 10, 5), Margin = new Thickness(0, 0, 15, 0), Foreground = Brushes.Black };
+            btnUndo.Click += (s, e) => UndoState();
+            toolStack.Children.Add(btnUndo);
+
+            rbMagic = new RadioButton { Content = "Magic Wand", IsChecked = true, Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 15, 0) };
+            rbErase = new RadioButton { Content = "Eraser", Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 15, 0) };
+            rbRestore = new RadioButton { Content = "Restore", Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 25, 0) };
+            toolStack.Children.Add(rbMagic);
+            toolStack.Children.Add(rbErase);
+            toolStack.Children.Add(rbRestore);
+
+            rbMagic.Checked += (s, e) => { Mouse.OverrideCursor = Cursors.Hand; };
+            rbErase.Checked += (s, e) => { Mouse.OverrideCursor = Cursors.Cross; };
+            rbRestore.Checked += (s, e) => { Mouse.OverrideCursor = Cursors.UpArrow; };
+
+            toolStack.Children.Add(new TextBlock { Text = "Tol:", Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 5, 0) });
+            sldTolerance = new Slider { Minimum = 0, Maximum = 255, Value = 35, Width = 80, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 15, 0) };
+            toolStack.Children.Add(sldTolerance);
+
+            toolStack.Children.Add(new TextBlock { Text = "Size:", Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 5, 0) });
+            sldBrushSize = new Slider { Minimum = 1, Maximum = 100, Value = 15, Width = 80, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 30, 0) };
+            toolStack.Children.Add(sldBrushSize);
+
+            Button btnSave = new Button
+            {
+                Content = "SAVE CLEAN IMAGE",
+                Background = new SolidColorBrush(Color.FromRgb(44, 58, 44)),
+                Foreground = Brushes.White,
+                Padding = new Thickness(15, 8, 15, 8),
+                FontWeight = FontWeights.Bold
+            };
+            btnSave.Click += BtnSave_Click;
+            toolStack.Children.Add(btnSave);
+        }
+
+        private void SaveState()
+        {
+            byte[] state = new byte[height * stride];
+            editableBitmap.CopyPixels(state, stride, 0);
+            undoStack.Push(state);
+            btnUndo.IsEnabled = true;
+        }
+
+        private void UndoState()
+        {
+            if (undoStack.Count > 0)
+            {
+                byte[] previousState = undoStack.Pop();
+                editableBitmap.WritePixels(new Int32Rect(0, 0, width, height), previousState, stride, 0);
+                if (undoStack.Count == 0) btnUndo.IsEnabled = false;
+            }
+        }
+
+        private void GetBitmapCoordinates(System.Windows.Point pos, out int bitmapX, out int bitmapY)
+        {
+            // Gracias al Grid central y al LayoutTransform, el cálculo es directo sobre el ActualWidth de la imagen.
+            double scaleX = width / imgEditor.ActualWidth;
+            double scaleY = height / imgEditor.ActualHeight;
+
+            bitmapX = (int)(pos.X * scaleX);
+            bitmapY = (int)(pos.Y * scaleY);
+        }
+
+        private void ImgEditor_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            GetBitmapCoordinates(e.GetPosition(imgEditor), out int x, out int y);
+            if (x < 0 || x >= width || y < 0 || y >= height) return;
+
+            SaveState();
+
+            if (rbMagic.IsChecked == true)
+            {
+                ApplyFloodFill(x, y);
+            }
+            else
+            {
+                isDrawing = true;
+                ApplyBrush(x, y);
+            }
+        }
+
+        private void ImgEditor_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            if (!isDrawing || rbMagic.IsChecked == true) return;
+
+            GetBitmapCoordinates(e.GetPosition(imgEditor), out int x, out int y);
+            ApplyBrush(x, y);
+        }
+
+        private void ImgEditor_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            isDrawing = false;
+        }
+
+        // Pincels
+        private void ApplyBrush(int cx, int cy)
+        {
+            int brushRadius = (int)sldBrushSize.Value;
+            int radiusSq = brushRadius * brushRadius;
+
+            byte[] currentPixels = new byte[height * stride];
+            editableBitmap.CopyPixels(currentPixels, stride, 0);
+
+            bool isErase = rbErase.IsChecked == true;
+            bool changed = false;
+
+            for (int y = Math.Max(0, cy - brushRadius); y <= Math.Min(height - 1, cy + brushRadius); y++)
+            {
+                for (int x = Math.Max(0, cx - brushRadius); x <= Math.Min(width - 1, cx + brushRadius); x++)
+                {
+                    int dx = x - cx;
+                    int dy = y - cy;
+                    
+                    if (dx * dx + dy * dy <= radiusSq)
+                    {
+                        int index = y * stride + x * 4;
+                        
+                        if (isErase && currentPixels[index + 3] > 0)
+                        {
+                            currentPixels[index + 3] = 0; 
+                            changed = true;
+                        }
+                        else if (!isErase && currentPixels[index + 3] == 0)
+                        {
+                            currentPixels[index] = originalPixels[index];
+                            currentPixels[index + 1] = originalPixels[index + 1];
+                            currentPixels[index + 2] = originalPixels[index + 2];
+                            currentPixels[index + 3] = originalPixels[index + 3];
+                            changed = true;
+                        }
+                    }
+                }
+            }
+
+            if (changed)
+            {
+                editableBitmap.WritePixels(new Int32Rect(0, 0, width, height), currentPixels, stride, 0);
+            }
+        }
+
+        //Magic pen
+        private void ApplyFloodFill(int startX, int startY)
+        {
+            try
+            {
+                byte[] currentPixels = new byte[height * stride];
+                editableBitmap.CopyPixels(currentPixels, stride, 0);
+
+                int index = startY * stride + startX * 4;
+                byte targetB = originalPixels[index];
+                byte targetG = originalPixels[index + 1];
+                byte targetR = originalPixels[index + 2];
+                byte targetA = originalPixels[index + 3];
+
+                if (targetA == 0) return; 
+
+                int tolerance = (int)sldTolerance.Value;
+
+                Queue<IntPoint> queue = new Queue<IntPoint>();
+                queue.Enqueue(new IntPoint(startX, startY));
+                bool[,] visited = new bool[width, height];
+
+                while (queue.Count > 0)
+                {
+                    IntPoint p = queue.Dequeue();
+                    if (visited[p.X, p.Y]) continue;
+                    visited[p.X, p.Y] = true;
+
+                    int currentIndex = p.Y * stride + p.X * 4;
+                    byte b = originalPixels[currentIndex];
+                    byte g = originalPixels[currentIndex + 1];
+                    byte r = originalPixels[currentIndex + 2];
+                    byte a = originalPixels[currentIndex + 3];
+
+                    if (Math.Abs(b - targetB) <= tolerance && 
+                        Math.Abs(g - targetG) <= tolerance && 
+                        Math.Abs(r - targetR) <= tolerance &&
+                        a > 0)
+                    {
+                        currentPixels[currentIndex + 3] = 0; 
+
+                        int[] dx = { 0, 0, -1, 1 };
+                        int[] dy = { -1, 1, 0, 0 };
+
+                        for (int i = 0; i < 4; i++)
+                        {
+                            int nx = p.X + dx[i];
+                            int ny = p.Y + dy[i];
+
+                            if (nx >= 0 && nx < width && ny >= 0 && ny < height && !visited[nx, ny])
+                            {
+                                queue.Enqueue(new IntPoint(nx, ny));
+                            }
+                        }
+                    }
+                }
+
+                editableBitmap.WritePixels(new Int32Rect(0, 0, width, height), currentPixels, stride, 0);
+            }
+            catch (Exception ex) { MessageBox.Show("Error applying magic wand: " + ex.Message); }
+        }
+
+        private void BtnSave_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                byte[] cleanPixels = new byte[height * stride];
+                editableBitmap.CopyPixels(cleanPixels, stride, 0);
+
+                WriteableBitmap finalBitmap = new WriteableBitmap(width, height, editableBitmap.DpiX, editableBitmap.DpiY, PixelFormats.Bgra32, null);
+                finalBitmap.WritePixels(new Int32Rect(0, 0, width, height), cleanPixels, stride, 0);
+
+                string newFileName = "cleaned_" + Path.GetFileNameWithoutExtension(originalPath) + ".png";
+                string outputPath = Path.Combine(libraryPath, newFileName);
+
+                using (FileStream stream = new FileStream(outputPath, FileMode.Create))
+                {
+                    PngBitmapEncoder encoder = new PngBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(finalBitmap));
+                    encoder.Save(stream);
+                }
+
+                MessageBox.Show($"Clean image successfully saved!\nSaved into your Library as:\n{newFileName}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                Close();
+            }
+            catch (Exception ex) { MessageBox.Show("Error saving cleaned image: " + ex.Message); }
         }
     }
 }
