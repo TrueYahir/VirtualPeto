@@ -30,7 +30,7 @@ Ensure the .NET SDK is installed on your development machine.
 
 ## Download Latest Version
 
-**[Download VirtualPeto v1.1-beta for Windows (64-bit)](https://github.com/TU-USUARIO/VirtualPeto/releases/download/v1.0.0/VirtualPeto_Windows_x64.zip)**
+**[Download VirtualPeto v1.1-beta for Windows (64-bit)](https://github.com/TrueYahir/VirtualPeto/releases/tag/v1.1-beta)**
 
 *Extract the .zip file and run `VirtualPeto.exe` to start the application. No installation is required.*
 
