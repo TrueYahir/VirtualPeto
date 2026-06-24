@@ -13,6 +13,7 @@ using System.Windows.Input;
 using System.Windows.Ink;
 using Microsoft.Win32;
 using WpfAnimatedGif;
+using ImageMagick;
 
 namespace VirtualPeto
 {
@@ -99,6 +100,8 @@ namespace VirtualPeto
         // Variables temporales de herramientas
         private string[] selectedToolsGifImages = Array.Empty<string>();
         private string selectedToolsBgImage = string.Empty;
+        private string selectedSpriteSheetPath = string.Empty;
+        private bool autoClearCache = false;
 
         public ConfigWindow()
         {
@@ -362,7 +365,13 @@ namespace VirtualPeto
                 { 
                     selected.IsActive = false; 
                     activeLibraryWindows.Remove(selected); 
-                    ApplyLibraryFilters(); 
+                    ApplyLibraryFilters();
+                    if (autoClearCache)
+                    {
+                        GC.Collect();
+                        GC.WaitForPendingFinalizers();
+                        GC.Collect();
+                    }
                 };
                 
                 activeLibraryWindows.Add(selected, newWindow);
@@ -526,7 +535,14 @@ namespace VirtualPeto
                 }
                 else newWindow.PetImage.Source = imgSource;
 
-                newWindow.Closed += (s, args) => { selected.IsActive = false; activePetsWindows.Remove(selected); };
+                newWindow.Closed += (s, args) => { selected.IsActive = false; activePetsWindows.Remove(selected);
+                    if (autoClearCache)
+                    {
+                        GC.Collect();
+                        GC.WaitForPendingFinalizers();
+                        GC.Collect();
+                    }
+                };
                 activePetsWindows.Add(selected, newWindow);
                 selected.IsActive = true;
                 newWindow.Show();
@@ -662,8 +678,123 @@ namespace VirtualPeto
             editor.ShowDialog();
         }
 
+        private void BtnToolsSelectSprite_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Filter = "Sprite Sheets (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp",
+                Title = "Select Sprite Sheet"
+            };
+            if (openFileDialog.ShowDialog() == true)
+            {
+                selectedSpriteSheetPath = openFileDialog.FileName;
+                TxtToolsSpriteName.Text = System.IO.Path.GetFileName(selectedSpriteSheetPath);
+                TxtToolsSpriteName.Foreground = System.Windows.Media.Brushes.White;
+            }
+        }
+
+        private void BtnToolsConvertSpriteToGif_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(selectedSpriteSheetPath) || !File.Exists(selectedSpriteSheetPath))
+            {
+                MessageBox.Show("Please select a Sprite Sheet first.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (!int.TryParse(TxtSpriteColumns.Text, out int columns) || !int.TryParse(TxtSpriteRows.Text, out int rows) || columns <= 0 || rows <= 0)
+            {
+                MessageBox.Show("Please enter valid numbers greater than 0 for rows and columns.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            try
+            {
+                BitmapImage spriteSheet = new BitmapImage(new Uri(selectedSpriteSheetPath));
+                int frameWidth = spriteSheet.PixelWidth / columns;
+                int frameHeight = spriteSheet.PixelHeight / rows;
+                GifBitmapEncoder encoder = new GifBitmapEncoder();
+                for (int y = 0; y < rows; y++)
+                {
+                    for (int x = 0; x < columns; x++)
+                    {
+                        Int32Rect rect = new Int32Rect(x * frameWidth, y * frameHeight, frameWidth, frameHeight);
+                        CroppedBitmap frame = new CroppedBitmap(spriteSheet, rect);
+                        encoder.Frames.Add(BitmapFrame.Create(frame));
+                    }
+                }
+                string outputPath = Path.Combine(libraryPath, $"SpriteAnim_{DateTime.Now.Ticks}.gif");
+                using (FileStream fs = new FileStream(outputPath, FileMode.Create))
+                {
+                    encoder.Save(fs);
+                }
+
+                MessageBox.Show("GIF created successfully and saved", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                LoadLibrary();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error converting Sprite Sheet: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void BtnToolsExtractSprites_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(selectedSpriteSheetPath) || !System.IO.File.Exists(selectedSpriteSheetPath))
+            {
+                MessageBox.Show("Please select a sprite sheet first.");
+                return;
+            }
+
+            if (!int.TryParse(TxtSpriteColumns.Text, out int columns) || columns <= 0 ||
+                !int.TryParse(TxtSpriteRows.Text, out int rows) || rows <= 0)
+            {
+                MessageBox.Show("Please enter valid numbers (greater than 0) for Columns and Rows.");
+                return;
+            }
+
+            Microsoft.Win32.SaveFileDialog saveFileDialog = new Microsoft.Win32.SaveFileDialog();
+            saveFileDialog.Filter = "GIF Image|*.gif";
+            saveFileDialog.FileName = "ExtractedPet.gif";
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    using (MagickImageCollection collection = new MagickImageCollection())
+                    {
+                        using (MagickImage spriteSheet = new MagickImage(selectedSpriteSheetPath))
+                        {
+                            int frameWidth = (int)(spriteSheet.Width / columns);
+                            int frameHeight = (int)(spriteSheet.Height / rows);
+
+                            for (int y = 0; y < rows; y++)
+                            {
+                                for (int x = 0; x < columns; x++)
+                                {
+                                    MagickImage frame = new MagickImage(spriteSheet);
+                                    frame.Crop(new MagickGeometry(x * frameWidth, y * frameHeight, (uint)frameWidth, (uint)frameHeight));
+                                    frame.ResetPage(); 
+                                    frame.AnimationDelay = 10; 
+                                    frame.GifDisposeMethod = GifDisposeMethod.Background; 
+                                    collection.Add(frame);
+                                }
+                            }
+                        }
+                        collection[0].AnimationIterations = 0;
+                        collection.Write(saveFileDialog.FileName);
+                    }
+
+                    MessageBox.Show("¡GIF generated correctly!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error generating the GIF: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
         // === SETTINGS ===
 
+        private void ChkAutoClearCache_Checked(object sender, RoutedEventArgs e) => autoClearCache = true;
+        private void ChkAutoClearCache_Unchecked(object sender, RoutedEventArgs e) => autoClearCache = false;
         private void BtnClearCache_Click(object sender, RoutedEventArgs e)
         {
             try { GC.Collect(); GC.WaitForPendingFinalizers(); MessageBox.Show("Cache cleared.", "Info", MessageBoxButton.OK, MessageBoxImage.Information); }
