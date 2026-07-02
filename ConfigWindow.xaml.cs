@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Windows;
@@ -14,6 +16,10 @@ using System.Windows.Ink;
 using Microsoft.Win32;
 using WpfAnimatedGif;
 using ImageMagick;
+using System.Runtime.InteropServices;
+using System.Windows.Interop;
+using System.Windows.Threading;
+using System.Windows.Resources;
 
 namespace VirtualPeto
 {
@@ -39,6 +45,14 @@ namespace VirtualPeto
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        public bool HasSound {get; set;}
+        public string? SoundPath {get; set;}
+        private double _volume = 0.5;
+        public double Volume
+        {
+            get => _volume;
+            set{_volume = value; OnPropertyChanged(); }
+        }
     }
 
     public class PetConfig
@@ -57,6 +71,15 @@ namespace VirtualPeto
         public string Sleep { get; set; } = string.Empty;
         public string LookAtScreen { get; set; } = string.Empty;
     }
+
+    public class VPetConfigData
+    {
+        public string? Name{get; set;}
+        public string? GifFile{get; set;}
+        public string? SoundFile{get; set;}
+        public double Volume{get; set;} = 0.5;
+    }
+
 
     public class PetItem : INotifyPropertyChanged
     {
@@ -86,27 +109,81 @@ namespace VirtualPeto
 
     public partial class ConfigWindow : Window
     {
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT
+        {
+            public int left;
+            public int top;
+            public int right;
+            public int bottom;
+        }
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetDesktopWindow();
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetShellWindow();
+
+        [DllImport("user32.dll")]
+        private static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
         private string libraryPath;
         private string petsPath;
         private List<LibraryItem> fullLibraryList = new List<LibraryItem>();
         private List<PetItem> fullPetsList = new List<PetItem>();
         
         private Dictionary<LibraryItem, MainWindow> activeLibraryWindows = new Dictionary<LibraryItem, MainWindow>();
-        private Dictionary<PetItem, MainWindow> activePetsWindows = new Dictionary<PetItem, MainWindow>();
+        private Dictionary<string, MainWindow> activePetsWindows = new Dictionary<string, MainWindow>(StringComparer.OrdinalIgnoreCase);
+
+        private int TotalActiveDesktopWindows => activeLibraryWindows.Count + activePetsWindows.Count;
 
         private readonly string[] validImages = { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".ico", ".tiff" };
         private readonly string[] validVideos = { ".mp4", ".avi", ".mkv", ".webm", ".mov", ".wmv" };
-
-        // Variables temporales de herramientas
         private string[] selectedToolsGifImages = Array.Empty<string>();
         private string selectedToolsBgImage = string.Empty;
+        private string selectedToolsGifBackgroundPath = string.Empty;
         private string selectedSpriteSheetPath = string.Empty;
         private bool autoClearCache = false;
+        private bool isLibraryGridView = false;
+        private int petLimit = 5;
+        private const int MinPetLimit = 1;
+        private const int MaxPetLimit = 20;
+        private bool runOnStartup = false;
+        private System.Windows.Forms.NotifyIcon _notifyIcon;
+        private bool _isClosingFR = false;
+        private System.Windows.Media.MediaPlayer _librarySoundPlayer = new System.Windows.Media.MediaPlayer();
+        private MediaPlayer _previewAudioPlayer = new MediaPlayer();
+        private bool _isPreviewPlaying = false;
+        private string _currentPreviewPath = string.Empty;
+        public static bool IsOverlappingEnabled = false;
+        private DispatcherTimer _fullScreenCheckTimer = new DispatcherTimer();
+
 
         public ConfigWindow()
         {
             InitializeComponent();
             
+            _fullScreenCheckTimer.Interval = TimeSpan.FromSeconds(2);
+            _fullScreenCheckTimer.Tick += CheckFullScreenApp;
+            _fullScreenCheckTimer.Start();
+
+            _notifyIcon = new System.Windows.Forms.NotifyIcon();
+            _notifyIcon.Icon = LoadEmbeddedIcon();
+            _notifyIcon.Text = "VirtualPeto";
+            _notifyIcon.Visible = true;
+            _notifyIcon.DoubleClick += (s, args) => { this.Show(); this.WindowState = WindowState.Normal; };
+            var contextMenu = new System.Windows.Forms.ContextMenuStrip();
+            contextMenu.Items.Add("Exit", null, (s, args) =>
+            {
+               _isClosingFR = true;
+               _notifyIcon.Dispose();
+               System.Windows.Application.Current.Shutdown(); 
+            });
+            _notifyIcon.ContextMenuStrip = contextMenu;
+
+
             string baseDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "VirtualPeto");
             
             libraryPath = Path.Combine(baseDataPath, "Library");
@@ -117,6 +194,37 @@ namespace VirtualPeto
             
             LoadLibrary();
             LoadPets();
+            TxtPetLimit.Text = petLimit.ToString();
+            ChkRunOnStartup.IsChecked = runOnStartup;
+        }
+
+        private System.Drawing.Icon LoadEmbeddedIcon()
+        {
+            Uri uri = new Uri("pack://application:,,,/icon.ico", UriKind.Absolute);
+            StreamResourceInfo resource = Application.GetResourceStream(uri);
+            if(resource == null)
+            {
+                throw new FileNotFoundException("Embedded icon not found");
+            }
+            using MemoryStream ms = new MemoryStream();
+            resource.Stream.CopyTo(ms);
+            ms.Position = 0;
+            return new System.Drawing.Icon(ms);
+        }
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            int activePets = System.Windows.Application.Current.Windows.Count - 1;
+            if(activePets > 0 && !_isClosingFR)
+            {
+                e.Cancel = true;
+                this.Hide();
+                _notifyIcon.ShowBalloonTip(3000, "VirtualPeto", "VirtualPeto still running", System.Windows.Forms.ToolTipIcon.Info);
+            }
+            else
+            {
+                _notifyIcon.Dispose();
+            }
+            base.OnClosing(e);
         }
 
         // === HELPERS ===
@@ -163,8 +271,7 @@ namespace VirtualPeto
 
         private void LoadLibrary()
         {
-            if (!Directory.Exists(libraryPath)) return;
-            
+            if (!Directory.Exists(libraryPath)) Directory.CreateDirectory(libraryPath);
             fullLibraryList = Directory.GetFiles(libraryPath, "*.*")
                 .Where(f => validImages.Contains(Path.GetExtension(f).ToLower()) || validVideos.Contains(Path.GetExtension(f).ToLower()))
                 .Select(path => 
@@ -179,7 +286,55 @@ namespace VirtualPeto
                         IsActive = activeLibraryWindows.Any(v => v.Key.FullPath == path)
                     };
                 }).ToList();
+
+            var vpetFiles = Directory.GetFiles(libraryPath, "*.vpet");
+            string vpetExtractDir = Path.Combine(libraryPath, "Extracted_VPets");
             
+            foreach(var vpetPath in vpetFiles)
+            {
+                try
+                {
+                    string petName = Path.GetFileNameWithoutExtension(vpetPath);
+                    string targetExtractPath = Path.Combine(vpetExtractDir, petName);
+                    
+                    if(!Directory.Exists(targetExtractPath))
+                    {
+                        System.IO.Compression.ZipFile.ExtractToDirectory(vpetPath, targetExtractPath);
+                    }
+                    
+                    string configJsonPath = Path.Combine(targetExtractPath, "config.json");
+                    if (File.Exists(configJsonPath))
+                    {
+                        string jsonContent = File.ReadAllText(configJsonPath); 
+                        var vpetData = JsonSerializer.Deserialize<VPetConfigData>(jsonContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        
+                        if (vpetData != null)
+                        {
+                            string gifFile = string.IsNullOrEmpty(vpetData.GifFile) ? "pet.gif" : vpetData.GifFile;
+                            string fullGifPath = Path.Combine(targetExtractPath, gifFile);
+                            string? soundFile = vpetData.SoundFile;
+                            
+                            var item = new LibraryItem
+                            {
+                                Name = string.IsNullOrEmpty(vpetData.Name) ? petName : vpetData.Name,
+                                FullPath = fullGifPath,
+                                IsVideo = false,
+                                HasSound = !string.IsNullOrEmpty(soundFile),
+                                SoundPath = !string.IsNullOrEmpty(soundFile) ? Path.Combine(targetExtractPath, soundFile) : null,
+                                Volume = vpetData.Volume,
+                                Thumbnail = LoadImageToMemory(fullGifPath), 
+                                IsActive = activeLibraryWindows.Any(v => v.Key.FullPath == fullGifPath)
+                            };
+                            
+                            fullLibraryList.Add(item);
+                        }
+                    }
+                }
+                catch(Exception ex)
+                {
+                    Debug.WriteLine($"Error loading .vpet: {ex.Message}");
+                }
+            }
             ApplyLibraryFilters();
         }
 
@@ -211,6 +366,31 @@ namespace VirtualPeto
 
             LstLibrary.ItemsSource = null;
             LstLibrary.ItemsSource = filteredList.ToList();
+            UpdateLibraryViewMode();
+        }
+
+        private void UpdateLibraryViewMode()
+        {
+            if (LstLibrary == null) return;
+
+            if (isLibraryGridView)
+            {
+                LstLibrary.ItemTemplate = (DataTemplate)Resources["LibraryGridTemplate"];
+                LstLibrary.ItemsPanel = (ItemsPanelTemplate)Resources["LibraryGridItemsPanel"];
+                BtnToggleLibraryView.Content = "List view";
+            }
+            else
+            {
+                LstLibrary.ItemTemplate = (DataTemplate)Resources["LibraryListTemplate"];
+                LstLibrary.ItemsPanel = (ItemsPanelTemplate)Resources["LibraryListItemsPanel"];
+                BtnToggleLibraryView.Content = "Grid view";
+            }
+        }
+
+        private void BtnToggleLibraryView_Click(object sender, RoutedEventArgs e)
+        {
+            isLibraryGridView = !isLibraryGridView;
+            UpdateLibraryViewMode();
         }
 
         private void Filters_Changed(object sender, RoutedEventArgs e)
@@ -221,7 +401,7 @@ namespace VirtualPeto
         private void BtnAddLibrary_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog dialog = new OpenFileDialog { 
-                Filter = "Media Files|*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.webp;*.mp4;*.avi;*.mkv;*.webm;*.mov|All Files|*.*" 
+                Filter = "Media Files|*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.webp;*.mp4;*.avi;*.mkv;*.webm;*.mov;*.vpet|All Files|*.*" 
             };
             
             if (dialog.ShowDialog() == true)
@@ -251,6 +431,8 @@ namespace VirtualPeto
                     TxtEmptyLibraryPreview.Visibility = Visibility.Visible;
                     PnlSize.Visibility = Visibility.Collapsed;
                     PnlFps.Visibility = Visibility.Collapsed;
+                    
+                    if (PnlAudio != null) PnlAudio.Visibility = Visibility.Collapsed;
                     return;
                 }
 
@@ -274,7 +456,7 @@ namespace VirtualPeto
 
                     BitmapImage? imgSource = LoadImageToMemory(selected.FullPath);
 
-                    if (selected.Name.ToLower().EndsWith(".gif"))
+                    if (selected.FullPath.ToLower().EndsWith(".gif"))
                     {
                         PnlFps.Visibility = Visibility.Visible;
                         ImageBehavior.SetAnimatedSource(ImgLibraryPreview, null);
@@ -287,8 +469,25 @@ namespace VirtualPeto
                         ImgLibraryPreview.Source = imgSource;
                     }
                 }
+
+                if (PnlAudio != null)
+                {
+                    PnlAudio.Visibility = selected.HasSound ? Visibility.Visible : Visibility.Collapsed;
+                }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading preview: {ex.Message}");
+                TxtSelectedLibraryName.Text = "Error loading preview";
+                TxtEmptyLibraryPreview.Visibility = Visibility.Visible;
+                ImageBehavior.SetAnimatedSource(ImgLibraryPreview, null);
+                ImgLibraryPreview.Source = null;
+                VidLibraryPreview.Stop();
+                VidLibraryPreview.Visibility = Visibility.Collapsed;
+                PnlSize.Visibility = Visibility.Collapsed;
+                PnlFps.Visibility = Visibility.Collapsed;
+                if (PnlAudio != null) PnlAudio.Visibility = Visibility.Collapsed;
+            }
         }
 
         private void VidLibraryPreview_MediaEnded(object sender, RoutedEventArgs e)
@@ -319,12 +518,32 @@ namespace VirtualPeto
                         }
 
                         fullLibraryList.Remove(selected);
-                        GC.Collect(); GC.WaitForPendingFinalizers();
-                        if (File.Exists(selected.FullPath)) File.Delete(selected.FullPath);
+                        GC.Collect(); 
+                        GC.WaitForPendingFinalizers();
+
+                        string fileToDelete = selected.FullPath;
+
+                        if (fileToDelete.Contains("Extracted_VPets"))
+                        {
+                            string folderName = Path.GetFileName(Path.GetDirectoryName(fileToDelete)!);
+                            string vpetOriginalFile = Path.Combine(libraryPath, folderName + ".vpet");
+                            string targetExtractPath = Path.Combine(libraryPath, "Extracted_VPets", folderName);
+
+                            if (File.Exists(vpetOriginalFile)) File.Delete(vpetOriginalFile);
+                            if (Directory.Exists(targetExtractPath)) Directory.Delete(targetExtractPath, true);
+                        }
+                        else
+                        {
+                            if (File.Exists(fileToDelete)) File.Delete(fileToDelete);
+                        }
                         
                         LoadLibrary();
                     }
-                    catch (Exception ex) { MessageBox.Show("Error deleting: " + ex.Message); LoadLibrary(); }
+                    catch (Exception ex) 
+                    { 
+                        MessageBox.Show("Error deleting: " + ex.Message); 
+                        LoadLibrary(); 
+                    }
                 }
             }
         }
@@ -335,30 +554,28 @@ namespace VirtualPeto
             {
                 if (activeLibraryWindows.ContainsKey(selected)) { activeLibraryWindows[selected].Activate(); return; }
 
-                MainWindow newWindow = new MainWindow();
-                newWindow.Width = SldSize.Value;
-                newWindow.Height = SldSize.Value;
-
-                if (selected.IsVideo)
+                if (TotalActiveDesktopWindows >= petLimit)
                 {
-                    newWindow.PetImage.Visibility = Visibility.Collapsed;
-                    newWindow.PetVideo.Visibility = Visibility.Visible;
-                    newWindow.PetVideo.Source = new Uri(selected.FullPath);
-                    newWindow.PetVideo.Play();
+                    MessageBox.Show($"You can only have {petLimit} desktop pets active at the same time. Close one before opening another.", "Pet limit reached", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
                 }
-                else
+                string soundPath = selected.HasSound && !string.IsNullOrEmpty(selected.SoundPath) ? selected.SoundPath : string.Empty;
+                MainWindow newWindow = new MainWindow(
+                    mediaPath: selected.FullPath,
+                    isVideo: selected.IsVideo,
+                    size: SldSize.Value,
+                    soundPath: soundPath,
+                    volume: selected.Volume
+                );
+                
+                newWindow.ShowInTaskbar = false;
+                if (!selected.IsVideo && selected.FullPath.ToLower().EndsWith(".gif"))
                 {
-                    BitmapImage? imgSource = LoadImageToMemory(selected.FullPath);
-                    if (selected.Name.ToLower().EndsWith(".gif"))
+                    if (int.TryParse(TxtFps.Text, out int fps) && fps > 0)
                     {
-                        if(imgSource != null) ImageBehavior.SetAnimatedSource(newWindow.PetImage, imgSource);
-                        if (int.TryParse(TxtFps.Text, out int fps) && fps > 0)
-                        {
-                            var controller = ImageBehavior.GetAnimationController(newWindow.PetImage);
-                            if (controller != null) ImageBehavior.SetAnimationDuration(newWindow.PetImage, new Duration(TimeSpan.FromMilliseconds((1000 / fps) * controller.FrameCount)));
-                        }
+                        var controller = ImageBehavior.GetAnimationController(newWindow.PetImage);
+                        if (controller != null) ImageBehavior.SetAnimationDuration(newWindow.PetImage, new Duration(TimeSpan.FromMilliseconds((1000 / fps) * controller.FrameCount)));
                     }
-                    else { newWindow.PetImage.Source = imgSource; }
                 }
 
                 newWindow.Closed += (s, args) => 
@@ -368,9 +585,7 @@ namespace VirtualPeto
                     ApplyLibraryFilters();
                     if (autoClearCache)
                     {
-                        GC.Collect();
-                        GC.WaitForPendingFinalizers();
-                        GC.Collect();
+                        ClearApplicationCache();
                     }
                 };
                 
@@ -386,6 +601,38 @@ namespace VirtualPeto
             if (LstLibrary.SelectedItem is LibraryItem selected && activeLibraryWindows.ContainsKey(selected))
             {
                 activeLibraryWindows[selected].Close();
+            }
+        }
+
+        private void BtnTestLibrarySound_Click(object sender, RoutedEventArgs e)
+        {
+            if (LstLibrary.SelectedItem is LibraryItem selected && selected.HasSound && !string.IsNullOrEmpty(selected.SoundPath))
+            {
+                if (_currentPreviewPath != selected.SoundPath)
+                {
+                    _librarySoundPlayer.Open(new Uri(selected.SoundPath));
+                    _librarySoundPlayer.Volume = selected.Volume;
+                    
+                    _librarySoundPlayer.MediaEnded += (s, args) => 
+                    {
+                        _isPreviewPlaying = false;
+                        _librarySoundPlayer.Position = TimeSpan.Zero;
+                    };
+                    
+                    _currentPreviewPath = selected.SoundPath;
+                    _isPreviewPlaying = false;
+                }
+
+                if (_isPreviewPlaying)
+                {
+                    _librarySoundPlayer.Pause();
+                    _isPreviewPlaying = false;
+                }
+                else
+                {
+                    _librarySoundPlayer.Play();
+                    _isPreviewPlaying = true;
+                }
             }
         }
 
@@ -409,12 +656,13 @@ namespace VirtualPeto
                         if (config != null)
                         {
                             string idlePath = Path.Combine(folder, config.Animations.Idle);
+                            string normalizedFolder = Path.GetFullPath(folder);
                             fullPetsList.Add(new PetItem
                             {
-                                DirectoryPath = folder,
+                                DirectoryPath = normalizedFolder,
                                 Config = config,
                                 Thumbnail = File.Exists(idlePath) ? LoadImageToMemory(idlePath) : null,
-                                IsActive = activePetsWindows.Any(v => v.Key.DirectoryPath == folder)
+                                IsActive = activePetsWindows.ContainsKey(normalizedFolder)
                             });
                         }
                     }
@@ -500,16 +748,20 @@ namespace VirtualPeto
                         ImageBehavior.SetAnimatedSource(ImgPetPreview, null);
                         ImgPetPreview.Source = null;
 
-                        if (activePetsWindows.TryGetValue(selected, out MainWindow? openWindow))
+                        if (!string.IsNullOrEmpty(selected.DirectoryPath))
                         {
+                            string normalizedPath = Path.GetFullPath(selected.DirectoryPath);
+                            if (activePetsWindows.TryGetValue(normalizedPath, out MainWindow? openWindow))
+                            {
                             openWindow.Close();
+                            }
                         }
 
                         fullPetsList.Remove(selected);
                         GC.Collect(); GC.WaitForPendingFinalizers();
                         if (Directory.Exists(selected.DirectoryPath)) Directory.Delete(selected.DirectoryPath, true);
-                        
-                        LoadPets();
+                                            
+                            LoadPets();
                     }
                     catch (Exception ex) { MessageBox.Show("Error deleting: " + ex.Message); LoadPets(); }
                 }
@@ -520,40 +772,53 @@ namespace VirtualPeto
         {
             if (LstPets.SelectedItem is PetItem selected)
             {
-                if (activePetsWindows.ContainsKey(selected)) { activePetsWindows[selected].Activate(); return; }
+                string petKey = NormalizePath(selected.DirectoryPath);
 
-                MainWindow newWindow = new MainWindow();
-                newWindow.Width = 150 * selected.Config.Scale;
-                newWindow.Height = 150 * selected.Config.Scale;
+                if (activePetsWindows.ContainsKey(petKey))
+                {
+                    activePetsWindows[petKey].Activate();
+                    return;
+                }
+
+                if (TotalActiveDesktopWindows >= petLimit)
+                {
+                    MessageBox.Show($"You can only have {petLimit} desktop pets active at the same time. Close one before opening another.", "Pet limit reached", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
 
                 string idlePath = Path.Combine(selected.DirectoryPath, selected.Config.Animations.Idle);
-                BitmapImage? imgSource = LoadImageToMemory(idlePath);
-                
-                if (idlePath.ToLower().EndsWith(".gif")) 
-                {
-                    if(imgSource != null) ImageBehavior.SetAnimatedSource(newWindow.PetImage, imgSource);
-                }
-                else newWindow.PetImage.Source = imgSource;
+                MainWindow newWindow = new MainWindow(
+                    mediaPath: idlePath,
+                    isVideo: false,
+                    size: 150 * selected.Config.Scale,
+                    soundPath: string.Empty,
+                    volume: 0.5
+                );
+                newWindow.ShowInTaskbar = false;
 
-                newWindow.Closed += (s, args) => { selected.IsActive = false; activePetsWindows.Remove(selected);
+                newWindow.Closed += (s, args) =>
+                {
+                    selected.IsActive = false;
+                    activePetsWindows.Remove(petKey);
+                    UpdateActivePetStatus();
                     if (autoClearCache)
                     {
-                        GC.Collect();
-                        GC.WaitForPendingFinalizers();
-                        GC.Collect();
+                        ClearApplicationCache();
                     }
                 };
-                activePetsWindows.Add(selected, newWindow);
+
+                activePetsWindows.Add(petKey, newWindow);
                 selected.IsActive = true;
                 newWindow.Show();
+                UpdateActivePetStatus();
             }
         }
 
         private void BtnClosePet_Click(object sender, RoutedEventArgs e)
         {
-            if (LstPets.SelectedItem is PetItem selected && activePetsWindows.ContainsKey(selected))
+            if (LstPets.SelectedItem is PetItem selected && activePetsWindows.ContainsKey(selected.DirectoryPath))
             {
-                activePetsWindows[selected].Close();
+                activePetsWindows[selected.DirectoryPath].Close();
             }
         }
 
@@ -564,6 +829,18 @@ namespace VirtualPeto
         }
 
         // === CREATE PET LOGIC ===
+
+        private string NormalizePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return string.Empty;
+            return Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        }
+
+        private void UpdateActivePetStatus()
+        {
+            if (TxtPetLimit == null) return;
+            TxtPetLimit.Text = petLimit.ToString();
+        }
 
         private void BtnGeneratePetTemplate_Click(object sender, RoutedEventArgs e)
         {
@@ -623,6 +900,13 @@ namespace VirtualPeto
             }
         }
 
+        private void BtnCreateGifPackage_Click(object sender, RoutedEventArgs e)
+        {
+            GifPackageWindow packager = new GifPackageWindow();
+            packager.Owner = this;
+            packager.ShowDialog();
+        }
+
         // Tools logic
 
         private void BtnToolsSelectGifImages_Click(object sender, RoutedEventArgs e)
@@ -676,6 +960,162 @@ namespace VirtualPeto
             BackgroundEditorWindow editor = new BackgroundEditorWindow(selectedToolsBgImage, libraryPath);
             editor.Closed += (s, args) => LoadLibrary(); 
             editor.ShowDialog();
+        }
+
+        private void BtnToolsSelectGifBackground_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Filter = "GIF Images (*.gif)|*.gif",
+                Title = "Select GIF"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                selectedToolsGifBackgroundPath = openFileDialog.FileName;
+                TxtToolsGifBgName.Text = Path.GetFileName(selectedToolsGifBackgroundPath);
+                TxtToolsGifBgName.Foreground = Brushes.White;
+            }
+        }
+
+        private void BtnToolsRemoveGifBackground_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(selectedToolsGifBackgroundPath) || !File.Exists(selectedToolsGifBackgroundPath))
+            {
+                MessageBox.Show("Please select a GIF first.", "GIF Background Remover", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                using var collection = new MagickImageCollection();
+                collection.Read(selectedToolsGifBackgroundPath);
+
+                if (collection.Count == 0)
+                {
+                    MessageBox.Show("The selected GIF could not be read.", "GIF Background Remover", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                collection.Coalesce();
+
+                int targetWidth = (int)Math.Max(collection.Max(f => f.Width), 1);
+                int targetHeight = (int)Math.Max(collection.Max(f => f.Height), 1);
+
+                var processedCollection = new MagickImageCollection();
+                IMagickColor<byte> backgroundColor = GetBackgroundColorFromGif(collection)
+                                      ?? collection[0].GetPixels().GetPixel(0, 0).ToColor()!;
+                int fuzzPercent = 10;
+
+                for (int i = 0; i < collection.Count; i++)
+                {
+                    var frame = new MagickImage(collection[i]);
+                    frame.Alpha(AlphaOption.Set);
+                    frame.ColorFuzz = new Percentage(fuzzPercent);
+                    frame.BackgroundColor = MagickColors.Transparent;
+                    if (frame.Width != targetWidth || frame.Height != targetHeight)
+                    {
+                        frame.Resize(new MagickGeometry((uint)targetWidth, (uint)targetHeight));
+                        frame.Page = new MagickGeometry(0, 0, (uint)targetWidth, (uint)targetHeight);
+                    }
+
+                    RemoveBorderBackground(frame, backgroundColor, fuzzPercent);
+                    processedCollection.Add(frame);
+                }
+
+                processedCollection[0].AnimationIterations = 0;
+                processedCollection.Optimize();
+
+                string outputPath = Path.Combine(libraryPath, $"cleaned_{Path.GetFileNameWithoutExtension(selectedToolsGifBackgroundPath)}.gif");
+                processedCollection.Write(outputPath);
+
+                selectedToolsGifBackgroundPath = string.Empty;
+                TxtToolsGifBgName.Text = "No GIF selected";
+                TxtToolsGifBgName.Foreground = Brushes.Gray;
+
+                MessageBox.Show($"GIF background removed and saved as:\n{Path.GetFileName(outputPath)}", "GIF Background Remover", MessageBoxButton.OK, MessageBoxImage.Information);
+                LoadLibrary();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error removing GIF background: " + ex.Message, "GIF Background Remover", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private static void RemoveBorderBackground(MagickImage frame, IMagickColor<byte> backgroundColor, int fuzzPercent)
+        {
+            frame.Alpha(AlphaOption.Set);
+            frame.VirtualPixelMethod = VirtualPixelMethod.Transparent;
+            frame.ColorFuzz = new Percentage(fuzzPercent);
+            frame.Transparent(backgroundColor);
+        }
+
+        private static IMagickColor<byte>? GetBackgroundColorFromGif(MagickImageCollection collection)
+        {
+            var colorCounts = new Dictionary<string, (int Count, IMagickColor<byte> Color)>();
+            foreach (MagickImage frame in collection)
+            {
+                AddBorderSamples(colorCounts, frame);
+            }
+
+            var best = colorCounts.Values.OrderByDescending(v => v.Count).FirstOrDefault();
+            if (best.Count == 0 || best.Color is null)
+            {
+                return null;
+            }
+
+            return best.Color;
+        }
+
+        private static void AddBorderSamples(Dictionary<string, (int Count, IMagickColor<byte> Color)> colorCounts, MagickImage frame)
+        {
+            int width = (int)frame.Width;
+            int height = (int)frame.Height;
+            int step = Math.Max(1, Math.Min(width, height) / 12);
+
+            for (int x = 0; x < width; x += step)
+            {
+                AddBorderSample(colorCounts, frame, x, 0);
+                AddBorderSample(colorCounts, frame, x, height - 1);
+            }
+            for (int y = 0; y < height; y += step)
+            {
+                AddBorderSample(colorCounts, frame, 0, y);
+                AddBorderSample(colorCounts, frame, width - 1, y);
+            }
+
+            AddBorderSample(colorCounts, frame, 0, 0);
+            AddBorderSample(colorCounts, frame, width - 1, 0);
+            AddBorderSample(colorCounts, frame, 0, height - 1);
+            AddBorderSample(colorCounts, frame, width - 1, height - 1);
+        }
+
+        private static void AddBorderSample(Dictionary<string, (int Count, IMagickColor<byte> Color)> colorCounts, MagickImage frame, int x, int y)
+        {
+            if (x < 0 || x >= frame.Width || y < 0 || y >= frame.Height) return;
+
+            var pixel = frame.GetPixels().GetPixel(x, y);
+            if (pixel is null) return;
+
+            var color = pixel.ToColor();
+            if (color is null || color.A < 200) return;
+
+            string key = $"{color.R / 8},{color.G / 8},{color.B / 8}";
+            if (!colorCounts.TryGetValue(key, out var existing))
+            {
+                colorCounts[key] = (1, color);
+            }
+            else
+            {
+                colorCounts[key] = (existing.Count + 1, existing.Color);
+            }
+        }
+
+        private static bool IsColorClose(IMagickColor<byte> color, IMagickColor<byte> backgroundColor, int tolerance)
+        {
+            return Math.Abs(color.R - backgroundColor.R) <= tolerance &&
+                   Math.Abs(color.G - backgroundColor.G) <= tolerance &&
+                   Math.Abs(color.B - backgroundColor.B) <= tolerance;
         }
 
         private void BtnToolsSelectSprite_Click(object sender, RoutedEventArgs e)
@@ -795,10 +1235,164 @@ namespace VirtualPeto
 
         private void ChkAutoClearCache_Checked(object sender, RoutedEventArgs e) => autoClearCache = true;
         private void ChkAutoClearCache_Unchecked(object sender, RoutedEventArgs e) => autoClearCache = false;
+
+        private void BtnDecreasePetLimit_Click(object sender, RoutedEventArgs e) => TrySetPetLimit(petLimit - 1);
+        private void BtnIncreasePetLimit_Click(object sender, RoutedEventArgs e) => TrySetPetLimit(petLimit + 1);
+
+        private bool TrySetPetLimit(int limit)
+        {
+            int clampedLimit = Math.Max(MinPetLimit, Math.Min(MaxPetLimit, limit));
+            if (clampedLimit < TotalActiveDesktopWindows)
+            {
+                MessageBox.Show($"You currently have {TotalActiveDesktopWindows} active desktop pets. Close one or more windows before lowering the limit to {clampedLimit}.", "Cannot lower limit", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
+            SetPetLimit(clampedLimit);
+            return true;
+        }
+
+        private void SetPetLimit(int limit)
+        {
+            petLimit = Math.Max(MinPetLimit, Math.Min(MaxPetLimit, limit));
+            TxtPetLimit.Text = petLimit.ToString();
+        }
+
+        private void ChkRunOnStartup_Checked(object sender, RoutedEventArgs e)
+        {
+            runOnStartup = true;
+            UpdateRunOnStartup(true);
+        }
+
+        private void ChkRunOnStartup_Unchecked(object sender, RoutedEventArgs e)
+        {
+            runOnStartup = false;
+            UpdateRunOnStartup(false);
+        }
+
+        private void UpdateRunOnStartup(bool enable)
+        {
+            try
+            {
+                const string registryKeyPath = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+                const string appName = "VirtualPeto";
+                using var runKey = Registry.CurrentUser.OpenSubKey(registryKeyPath, true) ?? Registry.CurrentUser.CreateSubKey(registryKeyPath);
+                if (runKey == null) return;
+
+                if (enable)
+                {
+                    string? exePath = GetExecutablePath();
+                    if (!string.IsNullOrEmpty(exePath))
+                    {
+                        runKey.SetValue(appName, $"\"{exePath}\"");
+                    }
+                }
+                else
+                {
+                    runKey.DeleteValue(appName, false);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Could not update startup setting: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private string? GetExecutablePath()
+        {
+            return Assembly.GetEntryAssembly()?.Location ?? Process.GetCurrentProcess().MainModule?.FileName;
+        }
+
+        private void ClearApplicationCache()
+        {
+            try
+            {
+                ImgLibraryPreview.Source = null;
+                ImageBehavior.SetAnimatedSource(ImgLibraryPreview, null);
+                ImgPetPreview.Source = null;
+                ImageBehavior.SetAnimatedSource(ImgPetPreview, null);
+
+                VidLibraryPreview.Stop();
+                VidLibraryPreview.Source = null;
+
+                foreach (var window in activeLibraryWindows.Values.Concat(activePetsWindows.Values).ToList())
+                {
+                    window.PetImage.Source = null;
+                    ImageBehavior.SetAnimatedSource(window.PetImage, null);
+                    window.PetVideo.Stop();
+                    window.PetVideo.Source = null;
+                }
+
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error clearing cache: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void BtnClearCache_Click(object sender, RoutedEventArgs e)
         {
-            try { GC.Collect(); GC.WaitForPendingFinalizers(); MessageBox.Show("Cache cleared.", "Info", MessageBoxButton.OK, MessageBoxImage.Information); }
-            catch (Exception ex) { MessageBox.Show("Error: " + ex.Message); }
+            ClearApplicationCache();
+            MessageBox.Show("Cache cleared.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void ChkOverlapping_Checked(object sender, RoutedEventArgs e)
+        {
+            IsOverlappingEnabled = true;
+            UpdateAllPetsClickThrough(true);
+        } 
+        private void ChkOverlapping_Unchecked(object sender, RoutedEventArgs e)
+        {
+            IsOverlappingEnabled = false;
+            UpdateAllPetsClickThrough(false);
+        }
+        private void UpdateAllPetsClickThrough(bool isClickThroughValue)
+        {
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window is MainWindow petWindow)
+                {
+                    petWindow.SetClickThrough(isClickThroughValue);
+                }
+            }
+        }
+        private void CheckFullScreenApp(object? sender, EventArgs e)
+        {
+            IntPtr foreground = GetForegroundWindow();
+            IntPtr desktop = GetDesktopWindow();
+            IntPtr shell = GetShellWindow();
+
+            bool isFullScreenAppActive = false;
+
+            if (foreground != desktop && foreground != shell && foreground != IntPtr.Zero)
+            {
+                GetWindowRect(foreground, out RECT rect);
+                int width = rect.right - rect.left;
+                int height = rect.bottom - rect.top;
+
+                if (width >= SystemParameters.PrimaryScreenWidth && height >= SystemParameters.PrimaryScreenHeight)
+                {
+                    isFullScreenAppActive = true;
+                }
+            }
+            bool hidePets = isFullScreenAppActive && !IsOverlappingEnabled;
+
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window is MainWindow petWindow)
+                {
+                    if (IsOverlappingEnabled && isFullScreenAppActive && petWindow.Visibility == Visibility.Visible)
+                    {
+                        petWindow.Topmost = false;
+                        petWindow.Topmost = true;
+                    }
+
+                    petWindow.Visibility = hidePets ? Visibility.Hidden : Visibility.Visible;
+                }
+            }
         }
     }
     internal class BackgroundEditorWindow : Window
@@ -864,14 +1458,14 @@ namespace VirtualPeto
 
             ScrollViewer scrollViewer = new ScrollViewer
             {
-                Background = Brushes.Black,
+                Background = CreateCheckerboardBrush(),
                 Margin = new Thickness(10),
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto
             };
             mainGrid.Children.Add(scrollViewer);
 
-            Grid centerGrid = new Grid { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            Grid centerGrid = new Grid { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Background = CreateCheckerboardBrush() };
             scrollViewer.Content = centerGrid;
 
             imgEditor = new Image { Stretch = Stretch.Uniform };
@@ -941,6 +1535,24 @@ namespace VirtualPeto
             };
             btnSave.Click += BtnSave_Click;
             toolStack.Children.Add(btnSave);
+        }
+
+        private static Brush CreateCheckerboardBrush()
+        {
+            DrawingBrush brush = new DrawingBrush
+            {
+                TileMode = TileMode.Tile,
+                Viewport = new Rect(0, 0, 16, 16),
+                ViewportUnits = BrushMappingMode.Absolute,
+                Stretch = Stretch.Fill
+            };
+
+            DrawingGroup group = new DrawingGroup();
+            group.Children.Add(new GeometryDrawing(Brushes.White, null, new RectangleGeometry(new Rect(0, 0, 16, 16))));
+            group.Children.Add(new GeometryDrawing(Brushes.LightGray, null, new RectangleGeometry(new Rect(0, 0, 8, 8))));
+            group.Children.Add(new GeometryDrawing(Brushes.LightGray, null, new RectangleGeometry(new Rect(8, 8, 16, 16))));
+            brush.Drawing = group;
+            return brush;
         }
 
         private void SaveState()
@@ -1057,52 +1669,75 @@ namespace VirtualPeto
                 editableBitmap.CopyPixels(currentPixels, stride, 0);
 
                 int index = startY * stride + startX * 4;
-                byte targetB = originalPixels[index];
-                byte targetG = originalPixels[index + 1];
-                byte targetR = originalPixels[index + 2];
-                byte targetA = originalPixels[index + 3];
+                if (currentPixels[index + 3] == 0) return;
 
-                if (targetA == 0) return; 
+                byte targetB = currentPixels[index];
+                byte targetG = currentPixels[index + 1];
+                byte targetR = currentPixels[index + 2];
 
-                int tolerance = (int)sldTolerance.Value;
+                int tolerance = Math.Max(8, (int)sldTolerance.Value);
 
                 Queue<IntPoint> queue = new Queue<IntPoint>();
+                HashSet<(int X, int Y)> visited = new HashSet<(int X, int Y)>();
                 queue.Enqueue(new IntPoint(startX, startY));
-                bool[,] visited = new bool[width, height];
+                visited.Add((startX, startY));
+
+                List<IntPoint> region = new List<IntPoint>();
+                bool touchesBorder = false;
 
                 while (queue.Count > 0)
                 {
                     IntPoint p = queue.Dequeue();
-                    if (visited[p.X, p.Y]) continue;
-                    visited[p.X, p.Y] = true;
-
                     int currentIndex = p.Y * stride + p.X * 4;
-                    byte b = originalPixels[currentIndex];
-                    byte g = originalPixels[currentIndex + 1];
-                    byte r = originalPixels[currentIndex + 2];
-                    byte a = originalPixels[currentIndex + 3];
 
-                    if (Math.Abs(b - targetB) <= tolerance && 
-                        Math.Abs(g - targetG) <= tolerance && 
-                        Math.Abs(r - targetR) <= tolerance &&
-                        a > 0)
+                    if (currentPixels[currentIndex + 3] == 0) continue;
+
+                    region.Add(p);
+
+                    if (p.X == 0 || p.X == width - 1 || p.Y == 0 || p.Y == height - 1)
                     {
-                        currentPixels[currentIndex + 3] = 0; 
+                        touchesBorder = true;
+                    }
 
-                        int[] dx = { 0, 0, -1, 1 };
-                        int[] dy = { -1, 1, 0, 0 };
+                    int[] dx = { 0, 0, -1, 1 };
+                    int[] dy = { -1, 1, 0, 0 };
 
-                        for (int i = 0; i < 4; i++)
+                    for (int i = 0; i < 4; i++)
+                    {
+                        int nx = p.X + dx[i];
+                        int ny = p.Y + dy[i];
+
+                        if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+
+                        var key = (nx, ny);
+                        if (visited.Contains(key)) continue;
+
+                        int neighborIndex = ny * stride + nx * 4;
+                        if (currentPixels[neighborIndex + 3] == 0) continue;
+
+                        byte b = currentPixels[neighborIndex];
+                        byte g = currentPixels[neighborIndex + 1];
+                        byte r = currentPixels[neighborIndex + 2];
+
+                        double distance = Math.Sqrt(Math.Pow(b - targetB, 2) + Math.Pow(g - targetG, 2) + Math.Pow(r - targetR, 2));
+                        if (distance <= tolerance)
                         {
-                            int nx = p.X + dx[i];
-                            int ny = p.Y + dy[i];
-
-                            if (nx >= 0 && nx < width && ny >= 0 && ny < height && !visited[nx, ny])
-                            {
-                                queue.Enqueue(new IntPoint(nx, ny));
-                            }
+                            visited.Add(key);
+                            queue.Enqueue(new IntPoint(nx, ny));
                         }
                     }
+                }
+
+                if (!touchesBorder)
+                {
+                    MessageBox.Show("The magic wand only removes background regions connected to the image border. Try clicking a background area near the edges.", "Tip", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                foreach (var point in region)
+                {
+                    int pixelIndex = point.Y * stride + point.X * 4;
+                    currentPixels[pixelIndex + 3] = 0;
                 }
 
                 editableBitmap.WritePixels(new Int32Rect(0, 0, width, height), currentPixels, stride, 0);
@@ -1130,7 +1765,7 @@ namespace VirtualPeto
                     encoder.Save(stream);
                 }
 
-                MessageBox.Show($"Clean image successfully saved!\nSaved into your Library as:\n{newFileName}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"Clean image successfully saved.\nSaved into your Library as:\n{newFileName}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 Close();
             }
             catch (Exception ex) { MessageBox.Show("Error saving cleaned image: " + ex.Message); }

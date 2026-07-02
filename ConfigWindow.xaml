@@ -2,12 +2,46 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:gif="clr-namespace:WpfAnimatedGif;assembly=WpfAnimatedGif"
-        Title="VirtualPeto - Configuration" Height="600" Width="950"
+        Title="VirtualPeto" Height="600" Width="950"
+        Icon="/icon.ico"
         Background="#0F0F14" Foreground="White" WindowStartupLocation="CenterScreen">
     
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <DataTemplate x:Key="LibraryListTemplate">
+            <StackPanel Orientation="Horizontal" Margin="5">
+                <TextBlock Text="video" Visibility="{Binding VideoIconVisibility}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <Image Source="{Binding Thumbnail}" Width="40" Height="40" Margin="0,0,10,0" Visibility="{Binding ImageIconVisibility}"/>
+                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Foreground="White" TextWrapping="Wrap"/>
+                <Ellipse Width="10" Height="10" Fill="Lime" Margin="10,0,0,0" Visibility="{Binding VisibilityIndicator}"/>
+            </StackPanel>
+        </DataTemplate>
         
+        <DataTemplate x:Key="LibraryGridTemplate">
+            <Border Width="150" Margin="6" Background="#222" CornerRadius="10" Padding="8">
+                <StackPanel>
+                    <Image Source="{Binding Thumbnail}" Width="130" Height="130" Stretch="Uniform" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding Name}" Foreground="White" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                        <Ellipse Width="12" Height="12" Fill="Lime" Visibility="{Binding VisibilityIndicator}" Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <ItemsPanelTemplate x:Key="LibraryListItemsPanel">
+            <VirtualizingStackPanel/>
+        </ItemsPanelTemplate>
+
+        <ItemsPanelTemplate x:Key="LibraryGridItemsPanel">
+            <WrapPanel Orientation="Horizontal" ItemWidth="170" MinWidth="170"/>
+        </ItemsPanelTemplate>
+
         <Style TargetType="TabItem">
             <Setter Property="Template">
                 <Setter.Value>
@@ -31,9 +65,13 @@
             <Setter Property="FontWeight" Value="Bold" />
         </Style>
     </Window.Resources>
-
+<!-- RIGHT PANEL-->
     <Grid>
-        <TabControl Background="Transparent" BorderBrush="Transparent" Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TabControl Background="Transparent" BorderBrush="Transparent" Margin="10" Grid.Row="0">
             
             <TabItem Header="Library">
                 <Grid Margin="10,15,10,10">
@@ -59,12 +97,14 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             
                             <TextBox x:Name="TxtSearchLibrary" TextChanged="Filters_Changed" Background="#1A1A24" Foreground="White" Padding="5" BorderBrush="#333"/>
                             <Button Grid.Column="1" Content="+ Add from PC" Click="BtnAddLibrary_Click" Background="#2C2C3A" Foreground="White" Padding="10,5" Margin="10,0,0,0"/>
+                            <Button x:Name="BtnToggleLibraryView" Grid.Column="2" Content="Grid view" Click="BtnToggleLibraryView_Click" Background="#2C2C3A" Foreground="White" Padding="10,5" Margin="10,0,0,0"/>
 
-                            <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,10,0,0">
+                            <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,10,0,0">
                                 <TextBlock Text="Filter by:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                 
                                 <ComboBox x:Name="CmbFilterType" SelectionChanged="Filters_Changed" Background="#1A1A24" Foreground="Black" BorderBrush="#333" Width="100" Margin="0,0,15,0">
@@ -77,17 +117,14 @@
                             </StackPanel>
                         </Grid>
 
-                        <ListBox x:Name="LstLibrary" Grid.Row="2" Background="#1A1A24" BorderBrush="#333" Foreground="White" SelectionChanged="LstLibrary_SelectionChanged">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" Margin="5">
-                                        <TextBlock Text="🎥" Visibility="{Binding VideoIconVisibility}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                        <Image Source="{Binding Thumbnail}" Width="40" Height="40" Margin="0,0,10,0" Visibility="{Binding ImageIconVisibility}"/>
-                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Foreground="White"/>
-                                        <Ellipse Width="10" Height="10" Fill="Lime" Margin="10,0,0,0" Visibility="{Binding VisibilityIndicator}"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
+                        <ListBox x:Name="LstLibrary" Grid.Row="2" Background="#1A1A24" BorderBrush="#333" Foreground="White" SelectionChanged="LstLibrary_SelectionChanged" ItemTemplate="{StaticResource LibraryListTemplate}" ItemsPanel="{StaticResource LibraryGridItemsPanel}" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                                    <Setter Property="VerticalContentAlignment" Value="Top"/>
+                                    <Setter Property="Padding" Value="0"/>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
                         </ListBox>
                     </Grid>
 
@@ -114,6 +151,24 @@
                                     <TextBox x:Name="TxtFps" Text="15" Width="50" TextAlignment="Center" Margin="5,0" Background="#1A1A24" Foreground="White" BorderBrush="#333"/>
                                     <Button Content="+" Width="30" Click="BtnIncreaseFps_Click" Background="#2C2C3A" Foreground="White"/>
                                 </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel x:Name="PnlAudio" Margin="0,0,0,15" 
+                                        Visibility="{Binding SelectedItem.HasSound, ElementName=LstLibrary, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                                <TextBlock Text="Audio:" FontWeight="Bold" Foreground="#4A90E2" Margin="0,0,0,5"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button Content="🔊 Play" Click="BtnTestLibrarySound_Click" Padding="8,4" Background="#2C2C3A" Foreground="White" Margin="0,0,10,0"/>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Volume:" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="#AAA"/>
+                                        <Slider Width="100" Minimum="0" Maximum="1" 
+                                                Value="{Binding SelectedItem.Volume, ElementName=LstLibrary, Mode=TwoWay}" 
+                                                VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
                             </StackPanel>
 
                             <Button Content="LAUNCH TO SCREEN" Click="BtnLaunchLibrary_Click" Background="#2C2C3A" Foreground="White" Padding="10,5" Margin="0,0,0,10"/>
@@ -151,7 +206,7 @@
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Image Source="{Binding Thumbnail}" Width="40" Height="40" Margin="0,0,10,0"/>
-                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Foreground="White"/>
+                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Foreground="White" TextWrapping="Wrap"/>
                                         <Ellipse Width="10" Height="10" Fill="Lime" Margin="10,0,0,0" Visibility="{Binding VisibilityIndicator}"/>
                                     </StackPanel>
                                 </DataTemplate>
@@ -204,115 +259,163 @@
                     </WrapPanel>
 
                     <Button Grid.Row="4" x:Name="BtnGeneratePetTemplate" Content="GENERATE PET FOLDER" Background="#2C2C3A" Foreground="White" Padding="15,5" VerticalAlignment="Top" HorizontalAlignment="Left" Click="BtnGeneratePetTemplate_Click"/>
+
+                    <Button Content="Create New GIF Package (.vpet)" Click="BtnCreateGifPackage_Click" Background="#4A90E2" Foreground="White" Padding="10, 5" Margin="0,5,0,0" />
                 </Grid>
             </TabItem>
 
             <TabItem Header="Tools">
-                <Grid Margin="10,15,10,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*"/>
-                        <ColumnDefinition Width="1*"/>
-                        <ColumnDefinition Width="1*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <Border Grid.Column="0" Background="#1A1A24" CornerRadius="10" Padding="15" Margin="0,0,5,0">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            
-                            <TextBlock Grid.Row="0" Text="GIF Creator" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
-                            <TextBlock Grid.Row="1" Text="Select multiple PNG/JPG files to bind into an animated GIF pet." Foreground="#AAA" TextWrapping="Wrap" Margin="0,0,0,15"/>
-                            
-                            <StackPanel Grid.Row="2">
-                                <Button Content="Select Frames" Click="BtnToolsSelectGifImages_Click" Background="#2C2C3A" Foreground="White" Padding="10,5" Margin="0,0,0,10"/>
-                                <TextBlock x:Name="TxtToolsGifCount" Text="0 images selected" Foreground="#888" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <WrapPanel Margin="10,15,10,10">
+                        <Border Width="320" MinHeight="280" Background="#1A1A24" CornerRadius="10" Padding="15" Margin="0,0,10,10">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
                                 
-                                <TextBlock Text="Frame Rate (FPS):" Foreground="White" Margin="0,0,0,5"/>
-                                <Slider x:Name="SldToolsGifFps" Minimum="1" Maximum="30" Value="10" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,0,0,5"/>
-                                <TextBlock Text="{Binding Value, ElementName=SldToolsGifFps, StringFormat={}{0} FPS}" Foreground="#AAA" HorizontalAlignment="Right"/>
-                            </StackPanel>
-                            
-                            <Button Grid.Row="3" Content="Generate GIF" Click="BtnToolsGenerateGif_Click" Background="#2C3A2C" Foreground="White" Padding="10,8" FontWeight="Bold"/>
-                        </Grid>
-                    </Border>
-
-                    <Border Grid.Column="1" Background="#1A1A24" CornerRadius="10" Padding="15" Margin="5,0,5,0">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            
-                            <TextBlock Grid.Row="0" Text="Background Remover" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
-                            <TextBlock Grid.Row="1" Text="Removes solid backgrounds based on the top-left pixel color." Foreground="#AAA" TextWrapping="Wrap" Margin="0,0,0,15"/>
-                            
-                            <StackPanel Grid.Row="2">
-                                <Button Content="Select Base Image" Click="BtnToolsSelectBgImage_Click" Background="#2C2C3A" Foreground="White" Padding="10,5" Margin="0,0,0,10"/>
-                                <TextBlock x:Name="TxtToolsBgImageName" Text="No file selected" Foreground="#888" Margin="0,0,0,15" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Grid.Row="0" Text="GIF Creator" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                                <TextBlock Grid.Row="1" Text="Select multiple PNG/JPG files to bind into an animated GIF pet." Foreground="#AAA" TextWrapping="Wrap" Margin="0,0,0,15"/>
                                 
-                                <Border Height="90" Background="Black" CornerRadius="5" Margin="0,0,0,10">
-                                    <Image x:Name="ImgToolsBgPreview" Stretch="Uniform"/>
-                                </Border>
-                            </StackPanel>
-                            
-                            <Button Grid.Row="3" Content="Remove Background" Click="BtnToolsRemoveBg_Click" Background="#2C3A2C" Foreground="White" Padding="10,8" FontWeight="Bold"/>
-                        </Grid>
-                    </Border>
-
-                    <Border Grid.Column="2" Background="#1A1A24" CornerRadius="10" Padding="15" Margin="5,0,0,0">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            
-                            <TextBlock Grid.Row="0" Text="Sprite Sheet Cutter" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
-                            <TextBlock Grid.Row="1" Text="Divide a single image sprite sheet into individual frames and generate a GIF." Foreground="#AAA" TextWrapping="Wrap" Margin="0,0,0,15"/>
-                            
-                            <StackPanel Grid.Row="2">
-                                <Button Content="Select Sprite Sheet" Click="BtnToolsSelectSprite_Click" Background="#2C2C3A" Foreground="White" Padding="10,5" Margin="0,0,0,10"/>
-                                
-                                <TextBlock x:Name="TxtToolsSpriteName" Text="No file selected" Foreground="#888" Margin="0,0,0,15" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                
-                                <Grid Margin="0,0,0,10">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
+                                <StackPanel Grid.Row="2">
+                                    <Button Content="Select Frames" Click="BtnToolsSelectGifImages_Click" Background="#2C2C3A" Foreground="White" Padding="10,5" Margin="0,0,0,10"/>
+                                    <TextBlock x:Name="TxtToolsGifCount" Text="0 images selected" Foreground="#888" Margin="0,0,0,20" HorizontalAlignment="Center"/>
                                     
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Columns:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,0,10,10"/>
-                                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="TxtSpriteColumns" Background="#1A1A24" Foreground="White" BorderBrush="#333" Padding="4" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Frame Rate (FPS):" Foreground="White" Margin="0,0,0,5"/>
+                                    <Slider x:Name="SldToolsGifFps" Minimum="1" Maximum="30" Value="10" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,0,0,5"/>
+                                    <TextBlock Text="{Binding Value, ElementName=SldToolsGifFps, StringFormat={}{0} FPS}" Foreground="#AAA" HorizontalAlignment="Right"/>
+                                </StackPanel>
+                                
+                                <Button Grid.Row="3" Content="Generate GIF" Click="BtnToolsGenerateGif_Click" Background="#2C3A2C" Foreground="White" Padding="10,8" FontWeight="Bold"/>
+                            </Grid>
+                        </Border>
+
+                        <Border Width="320" MinHeight="280" Background="#1A1A24" CornerRadius="10" Padding="15" Margin="0,0,10,10">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                
+                                <TextBlock Grid.Row="0" Text="Image Font Remover" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                                <TextBlock Grid.Row="1" Text="Removes solid backgrounds from still images with a smarter editor." Foreground="#AAA" TextWrapping="Wrap" Margin="0,0,0,15"/>
+                                
+                                <StackPanel Grid.Row="2">
+                                    <Button Content="Select Base Image" Click="BtnToolsSelectBgImage_Click" Background="#2C2C3A" Foreground="White" Padding="10,5" Margin="0,0,0,10"/>
+                                    <TextBlock x:Name="TxtToolsBgImageName" Text="No file selected" Foreground="#888" Margin="0,0,0,15" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                     
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Rows:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                    <TextBox Grid.Row="1" Grid.Column="1" x:Name="TxtSpriteRows" Background="#1A1A24" Foreground="White" BorderBrush="#333" Padding="4"/>
-                                </Grid>
-                            </StackPanel>
-                            
-                            <Button Grid.Row="3" Content="Extract &amp; Generate GIF" Click="BtnToolsExtractSprites_Click" Background="#2C3A2C" Foreground="White" Padding="10,8" FontWeight="Bold"/>
-                        </Grid>
-                    </Border>
-                    
-                </Grid>
+                                    <Border Height="90" Background="Black" CornerRadius="5" Margin="0,0,0,10">
+                                        <Image x:Name="ImgToolsBgPreview" Stretch="Uniform"/>
+                                    </Border>
+                                </StackPanel>
+                                
+                                <Button Grid.Row="3" Content="Remove Background" Click="BtnToolsRemoveBg_Click" Background="#2C3A2C" Foreground="White" Padding="10,8" FontWeight="Bold"/>
+                            </Grid>
+                        </Border>
+
+                        <Border Width="320" MinHeight="280" Background="#1A1A24" CornerRadius="10" Padding="15" Margin="0,0,10,10">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                
+                                <TextBlock Grid.Row="0" Text="GIF Background Remover" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                                <TextBlock Grid.Row="1" Text="Remove solid background from animated GIFs frame by frame." Foreground="#AAA" TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                                <StackPanel Grid.Row="2" VerticalAlignment="Center">
+                                    <Button Content="Select GIF" Click="BtnToolsSelectGifBackground_Click" Background="#2C2C3A" Foreground="White" Padding="10,5" Margin="0,0,0,10"/>
+                                    <TextBlock x:Name="TxtToolsGifBgName" Text="No file selected" Foreground="#888" Margin="0,0,0,15" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                                
+                                <Button Grid.Row="3" Content="Remove Background" Click="BtnToolsRemoveGifBackground_Click" Background="#2C3A2C" Foreground="White" Padding="10,8" FontWeight="Bold"/>
+                            </Grid>
+                        </Border>
+
+                        <Border Width="320" MinHeight="280" Background="#1A1A24" CornerRadius="10" Padding="15" Margin="0,0,10,10">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                
+                                <TextBlock Grid.Row="0" Text="Sprite Sheet Cutter" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                                <TextBlock Grid.Row="1" Text="Divide a single image sprite sheet into individual frames and generate a GIF." Foreground="#AAA" TextWrapping="Wrap" Margin="0,0,0,15"/>
+                                
+                                <StackPanel Grid.Row="2">
+                                    <Button Content="Select Sprite Sheet" Click="BtnToolsSelectSprite_Click" Background="#2C2C3A" Foreground="White" Padding="10,5" Margin="0,0,0,10"/>
+                                    
+                                    <TextBlock x:Name="TxtToolsSpriteName" Text="No file selected" Foreground="#888" Margin="0,0,0,15" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Columns:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,0,10,10"/>
+                                        <TextBox Grid.Row="0" Grid.Column="1" x:Name="TxtSpriteColumns" Background="#1A1A24" Foreground="White" BorderBrush="#333" Padding="4" Margin="0,0,0,10"/>
+                                        
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Rows:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                        <TextBox Grid.Row="1" Grid.Column="1" x:Name="TxtSpriteRows" Background="#1A1A24" Foreground="White" BorderBrush="#333" Padding="4"/>
+                                    </Grid>
+                                </StackPanel>
+                                
+                                <Button Grid.Row="3" Content="Extract &amp; Generate GIF" Click="BtnToolsExtractSprites_Click" Background="#2C3A2C" Foreground="White" Padding="10,8" FontWeight="Bold"/>
+                            </Grid>
+                        </Border>
+                    </WrapPanel>
+                </ScrollViewer>
             </TabItem>
 
             <TabItem Header="Settings">
                 <Grid Margin="20">
-                    <Button Content="Clear Cache" Click="BtnClearCache_Click" Width="150" Height="40" HorizontalAlignment="Left" VerticalAlignment="Top" Background="#2C2C3A" Foreground="White"/>
+                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Width="Auto" MaxWidth="520">
+                        <TextBlock Text="Memory" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,12"/>
+                        <Button Content="Clear cache now" Click="BtnClearCache_Click" Width="150" Height="40" HorizontalAlignment="Left" Background="#2C2C3A" Foreground="White"/>
+                        <CheckBox x:Name="ChkAutoClearCache" Content="Clear cache automatically when windows close" Margin="0,15,0,8" Foreground="White" Checked="ChkAutoClearCache_Checked" Unchecked="ChkAutoClearCache_Unchecked"/>
+                        <TextBlock Text="When enabled, the app releases loaded images and media when pet windows are closed." Foreground="#AAAAAA" TextWrapping="Wrap" Margin="0,0,0,20"/>
+
+                        <TextBlock Text="Desktop pet limit" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,12"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button x:Name="BtnDecreasePetLimit" Content="-" Width="35" Height="35" Click="BtnDecreasePetLimit_Click" Background="#2C2C3A" Foreground="White"/>
+                            <TextBlock x:Name="TxtPetLimit" Text="5" Width="40" TextAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="16" Margin="8,0"/>
+                            <Button x:Name="BtnIncreasePetLimit" Content="+" Width="35" Height="35" Click="BtnIncreasePetLimit_Click" Background="#2C2C3A" Foreground="White"/>
+                        </StackPanel>
+
+                        <TextBlock Text="Startup" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,12"/>
+                        <CheckBox x:Name="ChkRunOnStartup" Content="Start program when computer starts" Margin="0,0,0,8" Foreground="White" Checked="ChkRunOnStartup_Checked" Unchecked="ChkRunOnStartup_Unchecked"/>
+                        <TextBlock Text="Toggle whether VirtualPeto opens automatically on Windows sign in." Foreground="#AAAAAA" TextWrapping="Wrap"/>
+
+                        <CheckBox x:Name="ChkOverlapping" Content="Allow pets to overlay on full screen apps (Click-through)" Margin="0,8,0,8" Foreground="White" Checked="ChkOverlapping_Checked" Unchecked="ChkOverlapping_Unchecked"/>
+                        <TextBlock Text="When enabled, pets will stay on top of full-screen applications and clicks will pass through them." Foreground="#AAAAAA" TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+                    </StackPanel>
                 </Grid>
             </TabItem>
 
         </TabControl>
+        <Border Background="#12131A" CornerRadius="8" Margin="10,0,10,10" Padding="10" Grid.Row="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="TrueYahir | yahir.98@hotmail.com" Foreground="#AAA" VerticalAlignment="Center"/>
+                <TextBlock Text="v1.2" Foreground="#AAA" VerticalAlignment="Center" Grid.Column="1"/>
+            </Grid>
+        </Border>
     </Grid>
 </Window>
