@@ -399,8 +399,9 @@
                         <CheckBox x:Name="ChkRunOnStartup" Content="Start program when computer starts" Margin="0,0,0,8" Foreground="White" Checked="ChkRunOnStartup_Checked" Unchecked="ChkRunOnStartup_Unchecked"/>
                         <TextBlock Text="Toggle whether VirtualPeto opens automatically on Windows sign in." Foreground="#AAAAAA" TextWrapping="Wrap"/>
 
-                        <CheckBox x:Name="ChkOverlapping" Content="Allow pets to overlay on full screen apps (Click-through)" Margin="0,8,0,8" Foreground="White" Checked="ChkOverlapping_Checked" Unchecked="ChkOverlapping_Unchecked"/>
-                        <TextBlock Text="When enabled, pets will stay on top of full-screen applications and clicks will pass through them." Foreground="#AAAAAA" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                        <CheckBox x:Name="ChkOverlapping" Content="Allow pets to overlay on full screen apps." Margin="0,8,0,8" Foreground="White" Checked="ChkOverlapping_Checked" Unchecked="ChkOverlapping_Unchecked"/>
+                        
+                        <CheckBox x:Name="ChkLockPet" Content="Block pet position (Clicks will pass through)" Margin="0,8,0,8" Foreground="White" Checked="ChkLockPet_Checked" Unchecked="ChkLockPet_Unchecked"/>
 
                     </StackPanel>
                 </Grid>

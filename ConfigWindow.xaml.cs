@@ -13,13 +13,14 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Input;
 using System.Windows.Ink;
+using System.Windows.Interop;
+using System.Windows.Threading;
+using System.Windows.Resources;
 using Microsoft.Win32;
 using WpfAnimatedGif;
 using ImageMagick;
 using System.Runtime.InteropServices;
-using System.Windows.Interop;
-using System.Windows.Threading;
-using System.Windows.Resources;
+
 
 namespace VirtualPeto
 {
@@ -129,6 +130,7 @@ namespace VirtualPeto
 
         [DllImport("user32.dll")]
         private static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
+
         private string libraryPath;
         private string petsPath;
         private List<LibraryItem> fullLibraryList = new List<LibraryItem>();
@@ -158,6 +160,7 @@ namespace VirtualPeto
         private bool _isPreviewPlaying = false;
         private string _currentPreviewPath = string.Empty;
         public static bool IsOverlappingEnabled = false;
+        public static bool IsPetLocked {get; set;} = false;
         private DispatcherTimer _fullScreenCheckTimer = new DispatcherTimer();
 
 
@@ -1342,11 +1345,22 @@ namespace VirtualPeto
         private void ChkOverlapping_Checked(object sender, RoutedEventArgs e)
         {
             IsOverlappingEnabled = true;
-            UpdateAllPetsClickThrough(true);
+            //UpdateAllPetsClickThrough(true);
         } 
         private void ChkOverlapping_Unchecked(object sender, RoutedEventArgs e)
         {
             IsOverlappingEnabled = false;
+            //UpdateAllPetsClickThrough(false);
+        }
+
+        private void ChkLockPet_Checked(object sender, RoutedEventArgs e)
+        {
+            IsPetLocked = true;
+            UpdateAllPetsClickThrough(true);
+        }
+        private void ChkLockPet_Unchecked(object sender, RoutedEventArgs e)
+        {
+            IsPetLocked = false;
             UpdateAllPetsClickThrough(false);
         }
         private void UpdateAllPetsClickThrough(bool isClickThroughValue)
