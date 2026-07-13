@@ -1,12 +1,13 @@
-<Window x:Class="VirtualPeto.MainWindow"
+<local:PetWindowBase x:Class="VirtualPeto.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:VirtualPeto"
         Title="VirtualPeto" Height="150" Width="150"
-        Icon="/icon.ico"
-        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
-        Topmost="True" MouseLeftButtonDown="Window_MouseLeftButtonDown">
+        Icon="/Assets/icon.ico">
+    
     <Grid>
         <Image x:Name="PetImage" Stretch="Uniform"/>
         <MediaElement x:Name="PetVideo" Stretch="Uniform" LoadedBehavior="Manual" UnloadedBehavior="Stop" Visibility="Collapsed" MediaEnded="PetVideo_MediaEnded" IsMuted="True"/>
     </Grid>
-</Window>
+    
+</local:PetWindowBase>

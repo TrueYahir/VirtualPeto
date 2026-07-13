@@ -11,16 +11,25 @@
 
   <ItemGroup>
     <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.14.0" />
+    <PackageReference Include="NAudio" Version="2.3.0" />
     <PackageReference Include="WpfAnimatedGif" Version="2.0.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="icon.ico" />
+    <Resource Include="Assets\icon.ico" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Remove="System.Windows.Forms" />
     <Using Remove="System.Drawing" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\itch_io_logo_icon.png" />
+    <Resource Include="Assets\ko_fi_logo_icon.png" />
+  </ItemGroup>
+
+  <PropertyGroup>
+      <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
+  </PropertyGroup>
 
 </Project>

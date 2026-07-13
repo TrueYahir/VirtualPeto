@@ -4,12 +4,15 @@ using System.Windows;
 using System.Windows.Threading;
 using System.IO;
 using System.Threading.Tasks;
+using System;
 
 namespace VirtualPeto;
 public partial class App : Application
 {
     public App()
     {
+        SettingsManager.Load();
+
         DispatcherUnhandledException += App_DispatcherUnhandledException;
 
         AppDomain.CurrentDomain.UnhandledException += (s, e) =>
