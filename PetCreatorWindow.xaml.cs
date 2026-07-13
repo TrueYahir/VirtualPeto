@@ -236,6 +236,8 @@ namespace VirtualPeto
             if (baseW <= 0) baseW = 64;
             if (baseH <= 0) baseH = 64;
 
+            if(baseW <= 0 || baseH <= 0) return;
+
             try
             {
                 BitmapImage img = new BitmapImage();
@@ -258,7 +260,10 @@ namespace VirtualPeto
                 anim.FrameHeight = baseH;
                 anim.Columns = cols;
                 anim.Rows = rows;
-                anim.TotalFrames = totalFrames;
+                
+                if(anim.TotalFrames <= 1) anim.TotalFrames = totalFrames;
+
+                //anim.TotalFrames = totalFrames;
                 int.TryParse(TxtFps.Text, out int fps);
                 anim.Fps = fps > 0 ? fps : 10;
 
@@ -266,7 +271,10 @@ namespace VirtualPeto
                 {
                     TxtColumns.Text = cols.ToString();
                     TxtRows.Text = rows.ToString();
-                    TxtTotalFrames.Text = totalFrames.ToString();
+                    if(string.IsNullOrWhiteSpace(TxtTotalFrames.Text) || TxtTotalFrames.Text == "1")
+                    {
+                        TxtTotalFrames.Text = totalFrames.ToString();
+                    }
                 }
             }
             catch { }
@@ -408,17 +416,21 @@ namespace VirtualPeto
         private void ActualizarValoresDefault(AnimationData anim, int gw, int gh, int gFps, bool esIdle)
         {
             if (string.IsNullOrWhiteSpace(anim.FilePath)) return;
-
-            if (anim.FrameWidth == 0) anim.FrameWidth = gw > 0 ? gw : 64;
-            if (anim.FrameHeight == 0) anim.FrameHeight = gh > 0 ? gh : 64;
-            if (anim.Fps == 0) anim.Fps = gFps > 0 ? gFps : 10;
-
             string selected = (CmbFormat.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
-            if (selected == "Sprite Sheet")
+            bool isSpriteSheet = selected == "Sprite Sheet";
+
+            anim.IsSpriteSheet = isSpriteSheet;
+            anim.FrameWidth = anim.FrameWidth > 0 ? anim.FrameWidth : (gw > 0 ? gw : 64);
+            anim.FrameHeight = anim.FrameHeight > 0 ? anim.FrameHeight : (gh > 0 ? gh : 64);
+            anim.Fps = anim.Fps > 0 ? anim.Fps : (gFps > 0 ? gFps : 10);
+
+            //if (anim.FrameWidth == 0) anim.FrameWidth = gw > 0 ? gw : 64;
+            //if (anim.FrameHeight == 0) anim.FrameHeight = gh > 0 ? gh : 64;
+            ///if (anim.Fps == 0) anim.Fps = gFps > 0 ? gFps : 10;
+            if (isSpriteSheet)
             {
                 if (esIdle)
                 {
-                    anim.IsSpriteSheet = true;
                     int.TryParse(TxtColumns.Text, out int c);
                     int.TryParse(TxtRows.Text, out int r);
                     int.TryParse(TxtTotalFrames.Text, out int tf);
@@ -426,17 +438,31 @@ namespace VirtualPeto
                     anim.Rows = r > 0 ? r : 1;
                     anim.TotalFrames = tf > 0 ? tf : 1;
                 }
-                else if (anim.TotalFrames == 0 || anim.Columns == 0)
+                else
                 {
-                    anim.IsSpriteSheet = true;
-                    anim.Columns = 1;
-                    anim.Rows = 1;
-                    anim.TotalFrames = 1;
+                    try
+                    {
+                        BitmapImage img = new BitmapImage();
+                        img.BeginInit();
+                        img.CacheOption = BitmapCacheOption.OnLoad;
+                        img.UriSource = new Uri(anim.FilePath, UriKind.RelativeOrAbsolute);
+                        img.EndInit();
+
+                        int cols = img.PixelWidth / anim.FrameWidth;
+                        int rows = img.PixelHeight / anim.FrameHeight;
+                        anim.Columns = cols > 0 ? cols : 1;
+                        anim.Rows = rows > 0 ? rows : 1;
+                        int maxFrames = anim.Columns * anim.Rows;
+                        if(anim.TotalFrames <= 1 || anim.TotalFrames > maxFrames)
+                        {
+                            anim.TotalFrames = maxFrames;
+                        }
+                    }catch{}
+                    
                 }
             }
             else
             {
-                anim.IsSpriteSheet = false;
                 anim.Columns = 1;
                 anim.Rows = 1;
                 anim.TotalFrames = 1;

@@ -321,6 +321,13 @@ namespace VirtualPeto
                 _spriteSheet.CacheOption = BitmapCacheOption.OnLoad;
                 _spriteSheet.EndInit();
 
+                int maxColumns = Math.Max(1, _spriteSheet.PixelWidth / _frameWidth);
+                int maxRows = Math.Max(1, _spriteSheet.PixelHeight / _frameHeight);
+                int maxFrames = maxColumns * maxRows;
+                if(_totalFrames > maxFrames)
+                {
+                    _totalFrames = maxFrames;
+                }
                 _currentFrame = 0;
                 _animationTimer.Interval = TimeSpan.FromMilliseconds(1000.0 / fps);
                 _animationTimer.Start();
