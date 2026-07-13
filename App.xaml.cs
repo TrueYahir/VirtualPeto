@@ -30,6 +30,7 @@ public partial class App : Application
     {
         File.WriteAllText("crash.txt", e.Exception.ToString());
         MessageBox.Show(e.Exception.ToString());
+        e.Handled = true;
     }
 }
 

@@ -106,7 +106,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.2.2] - 2026-07-13
 ### Fixed
-Fixed an error that caused the pixel calculation in the sprite sheet to work incorrectly when creating a smart pet.
+- Fixed an error that caused the pixel calculation in the sprite sheet to work incorrectly when creating a smart pet.
+- Fixed an error when creating a GifPackage (path of the name was not found).
+- Added option to edit GIF Packages.
+- The application no longer closes due to erros.
 
 ### Planned
 - **Advanced Pet Interactions:** Future update will include new behavioral options for smart pets, allowing them to interact directly with other active programs and windows on the desktop.

@@ -599,9 +599,34 @@ namespace VirtualPeto
                 if (TotalActiveDesktopWindows >= petLimit) return;
 
                 string soundPath = selected.HasSound && !string.IsNullOrEmpty(selected.SoundPath) ? selected.SoundPath : string.Empty;
+                string mediaPath = selected.FullPath;
+                string? directory = System.IO.Path.GetDirectoryName(mediaPath);
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    string configPath = System.IO.Path.Combine(directory, "config.json");
+                    try
+                    {
+                        string jsonString = System.IO.File.ReadAllText(configPath);
+                        PetMetadata? metadata = System.Text.Json.JsonSerializer.Deserialize<PetMetadata>(jsonString);
+                        if(metadata != null)
+                        {
+                            if (!string.IsNullOrEmpty(metadata.IdleAnimation.FilePath))
+                            {
+                                mediaPath = System.IO.Path.Combine(directory, metadata.IdleAnimation.FilePath);
+                            }
+                            if (!string.IsNullOrEmpty(metadata.IdleAnimation.SoundPath))
+                            {
+                                soundPath = System.IO.Path.Combine(directory, metadata.IdleAnimation.SoundPath);
+                            }
+                        }
+                    }catch(Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[ConfigWindow] Error reading config.json: {ex.Message}");
+                    }
+                }
                 
                 MainWindow newWindow = new MainWindow(
-                    mediaPath: selected.FullPath,
+                    mediaPath: mediaPath,
                     isVideo: selected.IsVideo,
                     size: SldSize.Value,
                     soundPath: soundPath,
@@ -631,6 +656,54 @@ namespace VirtualPeto
                 selected.IsActive = true;
                 newWindow.Show();
                 ApplyLibraryFilters(); 
+            }
+        }
+        private void BtnEditGifPackage_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Filter = "Virtual Pet Files (*.vpet)|*.vpet", Title = "Select a GIF package to edit"
+            };
+            
+            if(openFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    bool isSmartPet = false;
+                    using (ZipArchive archive = ZipFile.OpenRead(openFileDialog.FileName))
+                    {
+                        ZipArchiveEntry? jsonEntry = archive.GetEntry("config.json");
+                        if (jsonEntry != null)
+                        {
+                            using (StreamReader reader = new StreamReader(jsonEntry.Open()))
+                            {
+                                string jsonContent = reader.ReadToEnd();
+                                using (JsonDocument doc = JsonDocument.Parse(jsonContent))
+                                {
+                                    if (doc.RootElement.TryGetProperty("IsSmartPet", out JsonElement isSmartElement))
+                                    {
+                                        if (isSmartElement.ValueKind == JsonValueKind.True) isSmartPet = true;
+                                        else if (isSmartElement.ValueKind == JsonValueKind.String && isSmartElement.GetString()?.ToLower() == "true") isSmartPet = true;
+                                        else if (isSmartElement.ValueKind == JsonValueKind.Number && isSmartElement.GetInt32() == 1) isSmartPet = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (isSmartPet)
+                    {
+                        MessageBox.Show("This is a Smart Pet. Please use the Smart Pet editor instead.", "Incompatible File", MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
+                    }
+                    GifPackageWindow editorWindow = new GifPackageWindow();
+                    editorWindow.Owner = this;
+                    editorWindow.LoadPackageForEditing(openFileDialog.FileName);
+                    editorWindow.ShowDialog();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error reading file: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 

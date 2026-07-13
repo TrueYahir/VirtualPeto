@@ -121,5 +121,47 @@ namespace VirtualPeto
                 }
             }
         }
+
+        public void LoadPackageForEditing(string vpetPath)
+        {
+            try
+            {
+                this.Title = "Edit GIF Package (.vpet)";
+                string tempDir = Path.Combine(Path.GetTempPath(), "vpet_edit_" + Guid.NewGuid().ToString());
+                Directory.CreateDirectory(tempDir);
+                ZipFile.ExtractToDirectory(vpetPath, tempDir);
+
+                string configPath = Path.Combine(tempDir, "config.json");
+                if (File.Exists(configPath))
+                {
+                    string jsonString = File.ReadAllText(configPath);
+                    var config = JsonSerializer.Deserialize<VPetConfigData>(jsonString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    
+                    if (config != null)
+                    {
+                        TxtName.Text = config.Name;
+                        if (!string.IsNullOrEmpty(config.GifFile))
+                        {
+                            _selectedGifPath = Path.Combine(tempDir, config.GifFile);
+                            TxtGifPath.Text = config.GifFile;
+                            BitmapImage img = new BitmapImage(new Uri(_selectedGifPath));
+                            ImageBehavior.SetAnimatedSource(ImgPreview, img);
+                        }
+                        if (!string.IsNullOrEmpty(config.SoundFile))
+                        {
+                            _selectedSoundPath = Path.Combine(tempDir, config.SoundFile);
+                            TxtSoundPath.Text = config.SoundFile;
+                            SoundControls.Visibility = Visibility.Visible;
+                            _mediaPlayer.Open(new Uri(_selectedSoundPath));
+                            SldVolume.Value = config.Volume;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading package: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 }
