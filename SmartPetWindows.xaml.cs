@@ -91,6 +91,7 @@ namespace VirtualPeto
         private const double BehaviorFrameMs = 16.0;
         private const double WalkSpeed = 1.1;
         private const double RunSpeed = 2.4;
+        private bool _isMovementLocked = false;
         
 
         public SmartPetWindow(PetMetadata metadata, string petDirectory)
@@ -118,6 +119,7 @@ namespace VirtualPeto
             this.MouseLeftButtonDown += SmartPetWindow_MouseLeftButtonDown;
             this.MouseLeftButtonUp += SmartPetWindow_MouseLeftButtonUp;
             this.MouseMove += SmartPetWindow_MouseMove;
+            this.MouseRightButtonDown += SmartPetWindow_MouseRightButtonDown;
 
             SetState(PetState.Intro);
 
@@ -457,22 +459,31 @@ namespace VirtualPeto
             {
                 if (_currentState == PetState.Idle || _currentState == PetState.Walking || _currentState == PetState.Running)
                 {
-                    int r = _random.Next(100);
-                    if (r < 5) 
-                    {
-                        SetState(PetState.Running);
-                        _behaviorTicks = _random.Next(20, 36); 
-                    }
-                    else if (r < 20) 
-                    {
-                        SetState(PetState.Walking);
-                        _behaviorTicks = _random.Next(24, 52);
-                    }
-                    else 
+                    if (_isMovementLocked)
                     {
                         SetState(PetState.Idle);
                         _behaviorTicks = _random.Next(120, 260);
                     }
+                    else
+                    {
+                        int r = _random.Next(100);
+                        if (r < 5) 
+                        {
+                            SetState(PetState.Running);
+                            _behaviorTicks = _random.Next(20, 36); 
+                        }
+                        else if (r < 20) 
+                        {
+                            SetState(PetState.Walking);
+                            _behaviorTicks = _random.Next(24, 52);
+                        }
+                        else 
+                        {
+                            SetState(PetState.Idle);
+                            _behaviorTicks = _random.Next(120, 260);
+                        }
+                    }
+                    
                 }
             }
         }
@@ -573,6 +584,16 @@ namespace VirtualPeto
             _dragStartTop = this.Top;
 
             this.CaptureMouse();
+        }
+        private void SmartPetWindow_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            _isMovementLocked = !_isMovementLocked;
+            this.ToolTip = _isMovementLocked ? "State: Still" : "State: Free movement";
+            if(_isMovementLocked && (_currentState == PetState.Walking || _currentState == PetState.Running))
+            {
+                SetState(PetState.Idle);
+                Console.WriteLine("Bloqueado.");
+            }
         }
 
         private void SmartPetWindow_MouseMove(object sender, MouseEventArgs e)

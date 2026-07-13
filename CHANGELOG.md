@@ -49,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Advanced Pet Interactions:** Future update will include new behavioral options for smart pets, allowing them to interact directly with other active programs and windows on the desktop.
 - **Removal background from Videos:** Future update will include the posibility to remove background from Videos.
 
-## [1.2.2] - 2026-07-2026
+## [1.2.2] - 2026-07-02
 
 ### Added
 - Added an option to block pet movement.
@@ -57,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed an issue that did not allow pets to be overlaid in full screen/borderless window applications.
 
-## [2.0.0] - 2026-07-12
+## [2.0.0] - 2026-07-03
 
 ### Added
 - Added 3D Smart Pets with new behavior logic and animations (walk, run, sleep, wake up).
@@ -87,7 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed an issue that did not allow pets to be overlaid in full screen/borderless window applications.
 
-## [2.2.1] - 2026-07-01
+## [2.2.1] - 2026-07-12
 
 ### Added
 - Added background removal support for GIF files.
@@ -103,6 +103,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved the background removal feature for images.
 - Pet windows are no longer displayed in the Windows taskbar.
 - Closing the main window now minimizes the application to the system tray while at least one pet is still active.
+
+## [2.2.2] - 2026-07-13
+### Fixed
+Fixed an error that caused the pixel calculation in the sprite sheet to work incorrectly when creating a smart pet.
 
 ### Planned
 - **Advanced Pet Interactions:** Future update will include new behavioral options for smart pets, allowing them to interact directly with other active programs and windows on the desktop.
