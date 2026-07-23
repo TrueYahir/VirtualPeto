@@ -3,6 +3,38 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:VirtualPeto"
         Title="SmartPetWindow" Height="150" Width="150">
+    <local:PetWindowBase.Resources>
+        <Style TargetType="ContextMenu">
+            <Setter Property="Background" Value="#1A1A24"/>
+            <Setter Property="BorderBrush" Value="#3A3A4A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style TargetType="MenuItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="0,1,0,1"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Style.Triggers>
+                <Trigger Property="IsHighlighted" Value="True">
+                    <Setter Property="Background" Value="#2C2C3A"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </local:PetWindowBase.Resources>
+    <local:PetWindowBase.ContextMenu>
+        <ContextMenu x:Name="PetContextMenu" Opened="PetContextMenu_Opened">
+            <MenuItem Header="Close Pet" Click="MenuClosePet_Click"/>
+            <MenuItem x:Name="MenuPinPet" Header="Pin Pet" Click="MenuPinPet_Click"/>
+            <MenuItem x:Name="MenuFollowMouse" Header="Follow Mouse" Click="MenuFollowMouse_Click"/>
+            <Separator/>
+            <MenuItem Header="Generate Food" Click="MenuGenerateFood_Click"/>
+            <MenuItem Header="Generate Toy" Click="MenuGenerateToy_Click"/>
+        </ContextMenu>
+    </local:PetWindowBase.ContextMenu>
     <Grid>
         <Image x:Name="PetSprite" 
                Stretch="None" 

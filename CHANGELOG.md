@@ -114,3 +114,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - **Advanced Pet Interactions:** Future update will include new behavioral options for smart pets, allowing them to interact directly with other active programs and windows on the desktop.
 - **Removal background from Videos:** Future update will include the posibility to remove background from Videos.
+
+## [2.2.3] - 2026-07-13
+### Fixed
+- Fixed an error that doesn't allow to close pets.
+
+### Added
+- Added a context menu for Pets & Smarts Pets, it can be used with right click.
+- Added Objects funcionality (Objects added in program will be added in next update.)
+
+### Planned
+- **Add Food and Toys to smart pets** Future update wull include new functions as interactions of pets with food, and toys, that the user can add to the desktop.

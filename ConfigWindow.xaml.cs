@@ -141,7 +141,7 @@ namespace VirtualPeto
         private List<LibraryItem> fullLibraryList = new List<LibraryItem>();
         private List<PetItem> fullPetsList = new List<PetItem>();
         
-        private Dictionary<LibraryItem, MainWindow> activeLibraryWindows = new Dictionary<LibraryItem, MainWindow>();
+        private Dictionary<string, MainWindow> activeLibraryWindows = new Dictionary<string, MainWindow>(StringComparer.OrdinalIgnoreCase);
         private Dictionary<string, Window> activePetsWindows = new Dictionary<string, Window>(StringComparer.OrdinalIgnoreCase);
 
         private int TotalActiveDesktopWindows => activeLibraryWindows.Count + activePetsWindows.Count;
@@ -323,7 +323,7 @@ namespace VirtualPeto
                         FullPath = path, 
                         IsVideo = isVid,
                         Thumbnail = isVid ? null : LoadImageToMemory(path), 
-                        IsActive = activeLibraryWindows.Any(v => v.Key.FullPath == path)
+                        IsActive = activeLibraryWindows.ContainsKey(NormalizePath(path))
                     };
                 }).ToList();
 
@@ -363,7 +363,7 @@ namespace VirtualPeto
                                 SoundPath = !string.IsNullOrEmpty(soundFile) ? Path.Combine(targetExtractPath, soundFile) : null,
                                 Volume = vpetData.Volume,
                                 Thumbnail = LoadImageToMemory(fullGifPath), 
-                                IsActive = activeLibraryWindows.Any(v => v.Key.FullPath == fullGifPath)
+                                IsActive = activeLibraryWindows.ContainsKey(NormalizePath(fullGifPath))
                             };
                             
                             fullLibraryList.Add(item);
@@ -554,7 +554,8 @@ namespace VirtualPeto
                         ImgLibraryPreview.Source = null;
                         VidLibraryPreview.Stop();
 
-                        if (activeLibraryWindows.TryGetValue(selected, out MainWindow? openWindow))
+                        string selectedKey = NormalizePath(selected.FullPath);
+                        if (activeLibraryWindows.TryGetValue(selectedKey, out MainWindow? openWindow))
                         {
                             openWindow.Close();
                         }
@@ -594,7 +595,8 @@ namespace VirtualPeto
         {
             if (LstLibrary.SelectedItem is LibraryItem selected)
             {
-                if (activeLibraryWindows.ContainsKey(selected)) { activeLibraryWindows[selected].Activate(); return; }
+                string libraryKey = NormalizePath(selected.FullPath);
+                if (activeLibraryWindows.ContainsKey(libraryKey)) { activeLibraryWindows[libraryKey].Activate(); return; }
 
                 if (TotalActiveDesktopWindows >= petLimit) return;
 
@@ -647,12 +649,12 @@ namespace VirtualPeto
                 newWindow.Closed += (s, args) => 
                 { 
                     selected.IsActive = false; 
-                    activeLibraryWindows.Remove(selected); 
+                    activeLibraryWindows.Remove(libraryKey); 
                     ApplyLibraryFilters();
                     if (autoClearCache) ClearApplicationCache(includeActiveWindows: false);
                 };
                 
-                activeLibraryWindows.Add(selected, newWindow);
+                activeLibraryWindows.Add(libraryKey, newWindow);
                 selected.IsActive = true;
                 newWindow.Show();
                 ApplyLibraryFilters(); 
@@ -709,9 +711,13 @@ namespace VirtualPeto
 
         private void BtnCloseLibrary_Click(object sender, RoutedEventArgs e)
         {
-            if (LstLibrary.SelectedItem is LibraryItem selected && activeLibraryWindows.ContainsKey(selected))
+            if (LstLibrary.SelectedItem is LibraryItem selected)
             {
-                activeLibraryWindows[selected].Close();
+                string libraryKey = NormalizePath(selected.FullPath);
+                if (activeLibraryWindows.TryGetValue(libraryKey, out MainWindow? openWindow))
+                {
+                    openWindow.Close();
+                }
             }
         }
 
@@ -1095,9 +1101,13 @@ namespace VirtualPeto
 
         private void BtnClosePet_Click(object sender, RoutedEventArgs e)
         {
-            if (LstPets.SelectedItem is PetItem selected && activePetsWindows.ContainsKey(selected.DirectoryPath))
+            if (LstPets.SelectedItem is PetItem selected)
             {
-                activePetsWindows[selected.DirectoryPath].Close();
+                string petKey = NormalizePath(selected.DirectoryPath);
+                if (activePetsWindows.TryGetValue(petKey, out Window? openWindow))
+                {
+                    openWindow.Close();
+                }
             }
         }
 

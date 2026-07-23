@@ -1,12 +1,18 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media.Imaging;
+using System.Windows.Media;
+using System.Windows.Interop;
 using System.Windows.Threading;
 using WpfAnimatedGif;
 using VirtualPeto.Services;
+using VirtualPeto.Objects;
 using System.Threading;
 
 namespace VirtualPeto
@@ -23,11 +29,22 @@ namespace VirtualPeto
         Sleep,
         WakeUp,
         Listening,
-        Notification
+        Notification,
+        Eating,
+        Playing,
+        Satisfied
     }
 
     public partial class SmartPetWindow : PetWindowBase
     {
+        [DllImport("user32.dll")]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_NOACTIVATE = 0x0010;
+
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool GetCursorPos(out POINT lpPoint);
@@ -92,6 +109,9 @@ namespace VirtualPeto
         private const double WalkSpeed = 1.1;
         private const double RunSpeed = 2.4;
         private bool _isMovementLocked = false;
+        private bool _isFollowingMouse = false;
+        private PetInteractableObject? _interactionTarget;
+        private double _interactionTicks = 0;
         
 
         public SmartPetWindow(PetMetadata metadata, string petDirectory)
@@ -119,7 +139,6 @@ namespace VirtualPeto
             this.MouseLeftButtonDown += SmartPetWindow_MouseLeftButtonDown;
             this.MouseLeftButtonUp += SmartPetWindow_MouseLeftButtonUp;
             this.MouseMove += SmartPetWindow_MouseMove;
-            this.MouseRightButtonDown += SmartPetWindow_MouseRightButtonDown;
 
             SetState(PetState.Intro);
 
@@ -237,6 +256,27 @@ namespace VirtualPeto
                     _behaviorTicks = GetOneShotTicks(_metadata.NotificationAnimation, 900);
                     ChangeAnimation(!string.IsNullOrEmpty(_metadata.NotificationAnimation.FilePath) ? _metadata.NotificationAnimation : _metadata.IdleAnimation);
                     break;
+
+                case PetState.Eating:
+                    _listeningSinceUtc = null;
+                    _vx = 0; _vy = 0;
+                    _behaviorTicks = Math.Max(20, _interactionTicks);
+                    ChangeAnimation(GetCustomActionAnimation("Eat", _metadata.ClickedAnimation));
+                    break;
+
+                case PetState.Playing:
+                    _listeningSinceUtc = null;
+                    _vx = 0; _vy = 0;
+                    _behaviorTicks = Math.Max(20, _interactionTicks);
+                    ChangeAnimation(GetCustomActionAnimation("Play", _metadata.ClickedAnimation));
+                    break;
+
+                case PetState.Satisfied:
+                    _listeningSinceUtc = null;
+                    _vx = 0; _vy = 0;
+                    _behaviorTicks = GetOneShotTicks(GetCustomActionAnimation("Satisfied", _metadata.NotificationAnimation), 900);
+                    ChangeAnimation(GetCustomActionAnimation("Satisfied", _metadata.NotificationAnimation));
+                    break;
             }
         }
 
@@ -256,6 +296,17 @@ namespace VirtualPeto
             if (_metadata.Movements.ContainsKey(key) && !string.IsNullOrEmpty(_metadata.Movements[key].FilePath))
                 return _metadata.Movements[key];
             return _metadata.IdleAnimation;
+        }
+
+        private AnimationData GetCustomActionAnimation(string actionName, AnimationData fallback)
+        {
+            RandomAction? action = _metadata.RandomActions?.FirstOrDefault(a =>
+                string.Equals(a.ActionName, actionName, StringComparison.OrdinalIgnoreCase) &&
+                a.Animation != null &&
+                !string.IsNullOrWhiteSpace(a.Animation.FilePath));
+
+            if (action?.Animation != null) return action.Animation;
+            return !string.IsNullOrWhiteSpace(fallback.FilePath) ? fallback : _metadata.IdleAnimation;
         }
 
         private void ChangeAnimation(AnimationData anim)
@@ -384,7 +435,46 @@ namespace VirtualPeto
 
             if (_currentState == PetState.Dragged) return;
 
-            if (_currentState == PetState.Intro || _currentState == PetState.Clicked || _currentState == PetState.Outro || _currentState == PetState.WakeUp || _currentState == PetState.Notification)
+            if (ProcessObjectInteraction(frameScale))
+            {
+                return;
+            }
+
+            if (_isFollowingMouse && !_isMovementLocked && !_isDragging && !_isMouseDown &&
+                _currentState != PetState.Intro && _currentState != PetState.Outro &&
+                _currentState != PetState.Clicked && _currentState != PetState.Sleep &&
+                _currentState != PetState.Listening && _currentState != PetState.Notification)
+            {
+                GetCursorPos(out POINT cursorPoint);
+                var source = PresentationSource.FromVisual(this);
+                Point cursorDip = source != null
+                    ? source.CompositionTarget.TransformFromDevice.Transform(new Point(cursorPoint.X, cursorPoint.Y))
+                    : new Point(cursorPoint.X, cursorPoint.Y);
+
+                double targetLeft = cursorDip.X - (this.Width / 2.0);
+                double targetTop = cursorDip.Y - (this.Height / 2.0);
+                double dx = targetLeft - this.Left;
+                double dy = targetTop - this.Top;
+                double distance = Math.Sqrt(dx * dx + dy * dy);
+
+                if (distance > 2)
+                {
+                    double step = Math.Min(distance, RunSpeed * 1.5 * frameScale);
+                    this.Left += (dx / distance) * step;
+                    this.Top += (dy / distance) * step;
+
+                    if (_currentState != PetState.Walking && _currentState != PetState.Running)
+                    {
+                        SetState(PetState.Walking);
+                    }
+                }
+                else if (_currentState == PetState.Walking || _currentState == PetState.Running)
+                {
+                    SetState(PetState.Idle);
+                }
+            }
+
+            if (_currentState == PetState.Intro || _currentState == PetState.Clicked || _currentState == PetState.Outro || _currentState == PetState.WakeUp || _currentState == PetState.Notification || _currentState == PetState.Satisfied)
             {
                 _behaviorTicks -= frameScale;
                 if (_behaviorTicks <= 0)
@@ -488,6 +578,80 @@ namespace VirtualPeto
             }
         }
 
+        private bool ProcessObjectInteraction(double frameScale)
+        {
+            if (_isClosing || _isDragging || _isMouseDown) return false;
+            if (_currentState == PetState.Intro || _currentState == PetState.Outro || _currentState == PetState.Sleep || _currentState == PetState.Listening || _currentState == PetState.Notification) return false;
+            if (_isMovementLocked && _interactionTarget == null) return false;
+
+            Point petCenter = GetPetCenter();
+
+            if (_interactionTarget == null || !_interactionTarget.CanBeInteracted())
+            {
+                _interactionTarget = PetObjectRegistry.FindNearestAvailable(petCenter, 260);
+                _interactionTicks = 0;
+                if (_interactionTarget == null) return false;
+            }
+
+            if (!_interactionTarget.IsCarried)
+            {
+                double distance = _interactionTarget.DistanceTo(petCenter);
+                if (distance > _interactionTarget.PickupRadius)
+                {
+                    Point targetCenter = _interactionTarget.GetCenter();
+                    double dx = targetCenter.X - petCenter.X;
+                    double dy = targetCenter.Y - petCenter.Y;
+                    double step = Math.Min(distance, RunSpeed * 1.7 * frameScale);
+                    if (distance > 0)
+                    {
+                        Left += (dx / distance) * step;
+                        Top += (dy / distance) * step;
+                    }
+                    if (_currentState != PetState.Walking && _currentState != PetState.Running)
+                    {
+                        SetState(PetState.Walking);
+                    }
+                    return true;
+                }
+
+                _interactionTarget.AttachToPet(this);
+                if (_interactionTarget is FoodObject food)
+                {
+                    _interactionTicks = Math.Max(15, food.ConsumeDuration.TotalMilliseconds / BehaviorFrameMs);
+                    SetState(PetState.Eating);
+                }
+                else if (_interactionTarget is ToyObject toy)
+                {
+                    _interactionTicks = Math.Max(15, toy.PlayDuration.TotalMilliseconds / BehaviorFrameMs);
+                    SetState(PetState.Playing);
+                }
+                else
+                {
+                    _interactionTicks = 30;
+                    SetState(PetState.Playing);
+                }
+            }
+
+            Point carryAnchor = new Point(Left + Width / 2.0, Top + Height * 0.72);
+            _interactionTarget.UpdateCarriedPosition(carryAnchor);
+            _interactionTicks -= frameScale;
+
+            if (_interactionTicks <= 0)
+            {
+                _interactionTarget.TryConsume();
+                _interactionTarget = null;
+                _interactionTicks = 0;
+                SetState(PetState.Satisfied);
+            }
+
+            return true;
+        }
+
+        private Point GetPetCenter()
+        {
+            return new Point(Left + Width / 2.0, Top + Height / 2.0);
+        }
+
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
             if (!_isClosing)
@@ -519,12 +683,14 @@ namespace VirtualPeto
                 _hasActiveAnimationAudio = false;
                 Interlocked.Decrement(ref _activeAnimationAudioSources);
             }
+            _interactionTarget = null;
+            _interactionTicks = 0;
             base.OnClosed(e);
         }
 
         private void CheckSystemIdle(object? sender, EventArgs e)
         {
-            if (_isClosing || _isDragging || _isMouseDown || _currentState == PetState.Intro || _currentState == PetState.Outro || _currentState == PetState.Clicked) return;
+            if (_isClosing || _isDragging || _isMouseDown || _currentState == PetState.Intro || _currentState == PetState.Outro || _currentState == PetState.Clicked || _currentState == PetState.Eating || _currentState == PetState.Playing) return;
 
             int sleepMinutes = Math.Max(0, SettingsManager.Current.SleepTimeMinutes);
             if (sleepMinutes == 0)
@@ -585,15 +751,64 @@ namespace VirtualPeto
 
             this.CaptureMouse();
         }
-        private void SmartPetWindow_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        private void PetContextMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            if (sender is ContextMenu menu)
+            {
+                menu.PlacementTarget = this;
+                menu.Placement = PlacementMode.Right;
+                menu.HorizontalOffset = 8;
+                menu.VerticalOffset = 0;
+
+                if (PresentationSource.FromVisual(menu) is HwndSource hwndSource)
+                {
+                    SetWindowPos(hwndSource.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                }
+            }
+
+            MenuPinPet.Header = _isMovementLocked ? "Unpin Pet" : "Pin Pet";
+            MenuFollowMouse.Header = _isFollowingMouse ? "Stop Following Mouse" : "Follow Mouse";
+        }
+
+        private void MenuClosePet_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        private void MenuPinPet_Click(object sender, RoutedEventArgs e)
         {
             _isMovementLocked = !_isMovementLocked;
-            this.ToolTip = _isMovementLocked ? "State: Still" : "State: Free movement";
-            if(_isMovementLocked && (_currentState == PetState.Walking || _currentState == PetState.Running))
+            if (_isMovementLocked && (_currentState == PetState.Walking || _currentState == PetState.Running))
             {
                 SetState(PetState.Idle);
-                Console.WriteLine("Bloqueado.");
             }
+        }
+
+        private void MenuFollowMouse_Click(object sender, RoutedEventArgs e)
+        {
+            _isFollowingMouse = !_isFollowingMouse;
+            if (_isFollowingMouse)
+            {
+                _isMovementLocked = false;
+            }
+            else if (_currentState == PetState.Walking || _currentState == PetState.Running)
+            {
+                SetState(PetState.Idle);
+            }
+        }
+
+        private void MenuGenerateFood_Click(object sender, RoutedEventArgs e)
+        {
+            Rect workArea = GetAllowedArea();
+            Point spawnAnchor = new Point(Left + Width / 2.0, Top + Height / 2.0);
+            PetObjectRegistry.SpawnFood(workArea, _random, spawnAnchor);
+        }
+
+        private void MenuGenerateToy_Click(object sender, RoutedEventArgs e)
+        {
+            Rect workArea = GetAllowedArea();
+            Point spawnAnchor = new Point(Left + Width / 2.0, Top + Height / 2.0);
+            PetObjectRegistry.SpawnToy(workArea, _random, spawnAnchor);
         }
 
         private void SmartPetWindow_MouseMove(object sender, MouseEventArgs e)

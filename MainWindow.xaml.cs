@@ -1,5 +1,9 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using WpfAnimatedGif;
 
@@ -7,6 +11,14 @@ namespace VirtualPeto
 {
     public partial class MainWindow : PetWindowBase
     {
+        [DllImport("user32.dll")]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_NOACTIVATE = 0x0010;
+
         public MainWindow(string mediaPath, bool isVideo, double size, string soundPath, double volume)
         {
             InitializeComponent();
@@ -41,6 +53,27 @@ namespace VirtualPeto
         {
             PetVideo.Position = TimeSpan.Zero;
             PetVideo.Play();
+        }
+
+        private void PetContextMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            if (sender is ContextMenu menu)
+            {
+                menu.PlacementTarget = this;
+                menu.Placement = PlacementMode.Right;
+                menu.HorizontalOffset = 8;
+                menu.VerticalOffset = 0;
+
+                if (PresentationSource.FromVisual(menu) is HwndSource hwndSource)
+                {
+                    SetWindowPos(hwndSource.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                }
+            }
+        }
+
+        private void MenuClosePet_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
     }
 }
