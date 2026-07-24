@@ -125,3 +125,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - **Add Food and Toys to smart pets** Future update wull include new functions as interactions of pets with food, and toys, that the user can add to the desktop.
+
+## [2.2.3] - 2026-07-24
+### Added
+- Added favorite options, and filters for favorites.

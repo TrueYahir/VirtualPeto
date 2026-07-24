@@ -10,12 +10,38 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
         <DataTemplate x:Key="LibraryListTemplate">
-            <StackPanel Orientation="Horizontal" Margin="5">
-                <TextBlock Text="video" Visibility="{Binding VideoIconVisibility}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <Image Source="{Binding Thumbnail}" Width="40" Height="40" Margin="0,0,10,0" Visibility="{Binding ImageIconVisibility}"/>
-                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Foreground="White" TextWrapping="Wrap"/>
-                <Ellipse Width="10" Height="10" Fill="Lime" Margin="10,0,0,0" Visibility="{Binding VisibilityIndicator}"/>
-            </StackPanel>
+            <Grid Margin="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="video" Visibility="{Binding VideoIconVisibility}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <Image Grid.Column="1" Source="{Binding Thumbnail}" Width="40" Height="40" Margin="0,0,10,0" Visibility="{Binding ImageIconVisibility}"/>
+                <TextBlock Grid.Column="2" Text="{Binding Name}" VerticalAlignment="Center" Foreground="White" TextTrimming="CharacterEllipsis" Margin="0,0,10,0"/>
+                <Ellipse Grid.Column="3" Width="10" Height="10" Fill="Lime" Margin="0,0,10,0" Visibility="{Binding VisibilityIndicator}" VerticalAlignment="Center"/>
+
+                <ToggleButton Grid.Column="4" IsChecked="{Binding IsFavorite, Mode=TwoWay}" Click="FavoriteToggle_Click" Cursor="Hand" Background="Transparent" BorderThickness="0" HorizontalAlignment="Right">
+                    <ToggleButton.Template>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <TextBlock Text="★" Foreground="{TemplateBinding Foreground}" FontSize="20" VerticalAlignment="Center"/>
+                        </ControlTemplate>
+                    </ToggleButton.Template>
+                    <ToggleButton.Style>
+                        <Style TargetType="ToggleButton">
+                            <Setter Property="Foreground" Value="Gray"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter Property="Foreground" Value="Gold"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ToggleButton.Style>
+                </ToggleButton>
+            </Grid>
         </DataTemplate>
 
         <DataTemplate x:Key="LibraryGridTemplate">
@@ -24,11 +50,31 @@
                     <Image Source="{Binding Thumbnail}" Width="130" Height="130" Stretch="Uniform" HorizontalAlignment="Center" Margin="0,0,0,8"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding Name}" Foreground="White" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                        <Ellipse Width="12" Height="12" Fill="Lime" Visibility="{Binding VisibilityIndicator}" Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        
+                        <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="White" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <Ellipse Grid.Column="1" Width="12" Height="12" Fill="Lime" Visibility="{Binding VisibilityIndicator}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        
+                        <ToggleButton Grid.Column="2" IsChecked="{Binding IsFavorite, Mode=TwoWay}" Click="FavoriteToggle_Click" Cursor="Hand" Background="Transparent" BorderThickness="0">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <TextBlock Text="★" Foreground="{TemplateBinding Foreground}" FontSize="18" VerticalAlignment="Center"/>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                            <ToggleButton.Style>
+                                <Style TargetType="ToggleButton">
+                                    <Setter Property="Foreground" Value="Gray"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter Property="Foreground" Value="Gold"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ToggleButton.Style>
+                        </ToggleButton>
                     </Grid>
                 </StackPanel>
             </Border>
@@ -43,11 +89,34 @@
         </ItemsPanelTemplate>
 
         <DataTemplate x:Key="PetListTemplate">
-            <StackPanel Orientation="Horizontal" Margin="5">
-                <Image Source="{Binding Thumbnail}" Width="40" Height="40" Margin="0,0,10,0"/>
-                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Foreground="White" TextWrapping="Wrap"/>
-                <Ellipse Width="10" Height="10" Fill="Lime" Margin="10,0,0,0" Visibility="{Binding VisibilityIndicator}"/>
-            </StackPanel>
+            <Grid Margin="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Image Grid.Column="0" Source="{Binding Thumbnail}" Width="40" Height="40" Margin="0,0,10,0"/>
+                <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" Foreground="White" TextTrimming="CharacterEllipsis" Margin="0,0,10,0"/>
+                <Ellipse Grid.Column="2" Width="10" Height="10" Fill="Lime" Margin="0,0,10,0" Visibility="{Binding VisibilityIndicator}" VerticalAlignment="Center"/>
+                <ToggleButton Grid.Column="3" IsChecked="{Binding IsFavorite, Mode=TwoWay}" Click="FavoriteToggle_Click" Cursor="Hand" Background="Transparent" BorderThickness="0" HorizontalAlignment="Right">
+                    <ToggleButton.Template>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <TextBlock Text="★" Foreground="{TemplateBinding Foreground}" FontSize="20" VerticalAlignment="Center"/>
+                        </ControlTemplate>
+                    </ToggleButton.Template>
+                    <ToggleButton.Style>
+                        <Style TargetType="ToggleButton">
+                            <Setter Property="Foreground" Value="Gray"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter Property="Foreground" Value="Gold"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ToggleButton.Style>
+                </ToggleButton>
+            </Grid>
         </DataTemplate>
 
 
@@ -57,10 +126,36 @@
                     <Grid Height="110">
                         <Image Source="{Binding Thumbnail}" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Grid>
-                    <TextBlock Text="{Binding Name}" Margin="0,8,0,0" Foreground="White" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
-                        <Ellipse Width="12" Height="12" Fill="Lime" Visibility="{Binding VisibilityIndicator}" Margin="0,0,6,0"/>
-                    </StackPanel>
+                    
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="White" FontWeight="Bold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        
+                        <Ellipse Grid.Column="1" Width="12" Height="12" Fill="Lime" Visibility="{Binding VisibilityIndicator}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+
+                        <ToggleButton Grid.Column="2" IsChecked="{Binding IsFavorite, Mode=TwoWay}" Click="FavoriteToggle_Click" Cursor="Hand" Background="Transparent" BorderThickness="0" HorizontalAlignment="Right">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <TextBlock Text="★" Foreground="{TemplateBinding Foreground}" FontSize="18" VerticalAlignment="Center"/>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                            <ToggleButton.Style>
+                                <Style TargetType="ToggleButton">
+                                    <Setter Property="Foreground" Value="Gray"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter Property="Foreground" Value="Gold"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ToggleButton.Style>
+                        </ToggleButton>
+                    </Grid>
                 </StackPanel>
             </Border>
         </DataTemplate>
@@ -187,15 +282,17 @@
                                         <ComboBoxItem Content="Images" Foreground="Black"/>
                                         <ComboBoxItem Content="GIFs" Foreground="Black"/>
                                         <ComboBoxItem Content="Videos" Foreground="Black"/>
+                                        <ComboBoxItem Content="Favorites" Foreground="Black"/>
                                     </ComboBox>
                                     <CheckBox x:Name="ChkFilterActive" Content="Only Active" Foreground="White" VerticalAlignment="Center" Checked="Filters_Changed" Unchecked="Filters_Changed"/>
+                                    <CheckBox x:Name="ChkOnlyFavorites" Content="★ Favorites" Foreground="Gold" VerticalAlignment="Center" Checked="Filters_Changed" Unchecked="Filters_Changed"/>
                                 </StackPanel>
                             </Grid>
 
                             <ListBox x:Name="LstLibrary" Grid.Row="2" Background="#1A1A24" BorderBrush="#333" Foreground="White" SelectionChanged="LstLibrary_SelectionChanged" ItemTemplate="{StaticResource LibraryListTemplate}" ItemsPanel="{StaticResource LibraryGridItemsPanel}" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
                                 <ListBox.ItemContainerStyle>
                                     <Style TargetType="ListBoxItem">
-                                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                                         <Setter Property="VerticalContentAlignment" Value="Top"/>
                                         <Setter Property="Padding" Value="0"/>
                                     </Style>
@@ -338,7 +435,7 @@
                         <ListBox x:Name="LstPets" Grid.Row="2" Background="#1A1A24" BorderBrush="#333" Foreground="White" SelectionChanged="LstPets_SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <ListBox.ItemContainerStyle>
                                 <Style TargetType="ListBoxItem">
-                                    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                                     <Setter Property="VerticalContentAlignment" Value="Top"/>
                                     <Setter Property="Padding" Value="0"/>
                                 </Style>

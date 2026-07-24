@@ -15,6 +15,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Input;
 using System.Windows.Ink;
 using System.Windows.Interop;
+using System.Windows.Controls.Primitives;
 using System.Windows.Threading;
 using System.Windows.Resources;
 using Microsoft.Win32;
@@ -56,6 +57,12 @@ namespace VirtualPeto
         {
             get => _volume;
             set{_volume = value; OnPropertyChanged(); }
+        }
+        private bool _isFavorite;
+        public bool IsFavorite
+        {
+            get {return _isFavorite;}
+            set { _isFavorite = value; OnPropertyChanged(); }
         }
     }
 
@@ -104,6 +111,12 @@ namespace VirtualPeto
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        private bool _isFavorite;
+        public bool IsFavorite
+        {
+            get {return _isFavorite;}
+            set { _isFavorite = value; OnPropertyChanged(); }
+        }
     }
     internal struct IntPoint
     {
@@ -172,6 +185,8 @@ namespace VirtualPeto
         private int _previewCurrentFrame = 0;
         private AnimationData? _currentPreviewData;
         private BitmapImage? _previewSheet;
+        private string favoritesFilePath;
+        private List<string> favoritePaths = new List<string>();
 
 
         public ConfigWindow()
@@ -206,7 +221,9 @@ namespace VirtualPeto
             
             if (!Directory.Exists(libraryPath)) Directory.CreateDirectory(libraryPath);
             if (!Directory.Exists(petsPath)) Directory.CreateDirectory(petsPath);
+            favoritesFilePath = Path.Combine(baseDataPath, "favorites.json");
             
+            LoadFavorites();
             LoadLibrary();
             LoadPets();
             TxtPetLimit.Text = petLimit.ToString();
@@ -240,7 +257,6 @@ namespace VirtualPeto
         }
         private void LoadConfig()
         {
-            // Asegurarnos de que las opciones visuales coincidan con el archivo JSON
             ChkRunOnStartup.IsChecked = SettingsManager.Current.RunOnStartup;
             ChkAutoClearCache.IsChecked = SettingsManager.Current.AutoClearCache;
             ChkOverlapping.IsChecked = SettingsManager.Current.AllowOverlay;
@@ -266,6 +282,7 @@ namespace VirtualPeto
             }
             base.OnClosing(e);
         }
+
 
         // === HELPERS ===
 
@@ -312,6 +329,16 @@ namespace VirtualPeto
         private void LoadLibrary()
         {
             if (!Directory.Exists(libraryPath)) Directory.CreateDirectory(libraryPath);
+            HashSet<string> favoritesSet = new HashSet<string>();
+            if (File.Exists("favorites.json"))
+            {
+                try 
+                { 
+                    var favs = JsonSerializer.Deserialize<List<string>>(File.ReadAllText("favorites.json"));
+                    if (favs != null) favoritesSet = new HashSet<string>(favs.Select(p => p.ToLowerInvariant()));
+                } 
+                catch { System.Diagnostics.Debug.WriteLine("Error reading favorites.json"); }
+            }
             fullLibraryList = Directory.GetFiles(libraryPath, "*.*")
                 .Where(f => validImages.Contains(Path.GetExtension(f).ToLower()) || validVideos.Contains(Path.GetExtension(f).ToLower()))
                 .Select(path => 
@@ -323,7 +350,8 @@ namespace VirtualPeto
                         FullPath = path, 
                         IsVideo = isVid,
                         Thumbnail = isVid ? null : LoadImageToMemory(path), 
-                        IsActive = activeLibraryWindows.ContainsKey(NormalizePath(path))
+                        IsActive = activeLibraryWindows.ContainsKey(NormalizePath(path)),
+                        IsFavorite = favoritePaths.Contains(path)
                     };
                 }).ToList();
 
@@ -363,7 +391,8 @@ namespace VirtualPeto
                                 SoundPath = !string.IsNullOrEmpty(soundFile) ? Path.Combine(targetExtractPath, soundFile) : null,
                                 Volume = vpetData.Volume,
                                 Thumbnail = LoadImageToMemory(fullGifPath), 
-                                IsActive = activeLibraryWindows.ContainsKey(NormalizePath(fullGifPath))
+                                IsActive = activeLibraryWindows.ContainsKey(NormalizePath(fullGifPath)),
+                                IsFavorite = favoritePaths.Contains(fullGifPath)
                             };
                             
                             fullLibraryList.Add(item);
@@ -403,6 +432,10 @@ namespace VirtualPeto
             {
                 filteredList = filteredList.Where(m => m.IsActive);
             }
+            if (ChkOnlyFavorites != null && ChkOnlyFavorites.IsChecked == true)
+            {
+                filteredList = filteredList.Where(m => m.IsFavorite);
+            }
 
             LstLibrary.ItemsSource = null;
             LstLibrary.ItemsSource = filteredList.ToList();
@@ -438,6 +471,10 @@ namespace VirtualPeto
         private void Filters_Changed(object sender, RoutedEventArgs e)
         {
             ApplyLibraryFilters();
+            if (fullPetsList != null && fullPetsList.Count > 0) 
+            {
+                ApplyPetFilters(); 
+            }
         }
 
         private void BtnAddLibrary_Click(object sender, RoutedEventArgs e)
@@ -759,6 +796,16 @@ namespace VirtualPeto
         {
             if (!Directory.Exists(petsPath)) return;
             fullPetsList.Clear();
+            HashSet<string> favoritesSet = new HashSet<string>();
+            if (File.Exists("favorites.json"))
+            {
+                try 
+                { 
+                    var favs = JsonSerializer.Deserialize<List<string>>(File.ReadAllText("favorites.json"));
+                    if (favs != null) favoritesSet = new HashSet<string>(favs.Select(p => p.ToLowerInvariant()));
+                } 
+                catch { System.Diagnostics.Debug.WriteLine("Error reading favorites.json"); }
+            }
 
             foreach (string folder in Directory.GetDirectories(petsPath))
             {
@@ -814,14 +861,14 @@ namespace VirtualPeto
                         }
 
                         string petName = smartConfig?.PetName ?? oldConfig?.Name ?? Path.GetFileName(normalizedFolder);
-
                         fullPetsList.Add(new PetItem
                         {
                             DirectoryPath = normalizedFolder,
                             Config = oldConfig ?? new PetConfig(),
                             SmartConfig = smartConfig,
                             Thumbnail = thumbnail,
-                            IsActive = activePetsWindows.ContainsKey(normalizedFolder)
+                            IsActive = activePetsWindows.ContainsKey(normalizedFolder),
+                            IsFavorite = favoritePaths.Contains(normalizedFolder)
                         });
                     }
                 }
@@ -1168,6 +1215,56 @@ namespace VirtualPeto
                 {
                     MessageBox.Show("Error reading file: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
+            }
+        }
+
+        private void LoadFavorites()
+        {
+            favoritesFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "VirtualPeto", "favorites.json");
+            if (File.Exists(favoritesFilePath))
+            {
+                try
+                {
+                    string json = File.ReadAllText(favoritesFilePath);
+                    favoritePaths = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
+                }catch{favoritePaths = new List<string>();}
+            }
+        }
+
+        private void SaveFavorites()
+        {
+            try
+            {
+                string json = JsonSerializer.Serialize(favoritePaths);
+                string directory = Path.GetDirectoryName(favoritesFilePath) ?? string.Empty;
+                if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
+                File.WriteAllText(favoritesFilePath, json);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error saving favorites: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void FavoriteToggle_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is ToggleButton tb)
+            {
+                if (tb.DataContext is LibraryItem libItem)
+                {
+                    if (libItem.IsFavorite && !favoritePaths.Contains(libItem.FullPath))
+                        favoritePaths.Add(libItem.FullPath);
+                    else if (!libItem.IsFavorite)
+                        favoritePaths.Remove(libItem.FullPath);
+                }
+                else if (tb.DataContext is PetItem petItem)
+                {
+                    if (petItem.IsFavorite && !favoritePaths.Contains(petItem.DirectoryPath))
+                        favoritePaths.Add(petItem.DirectoryPath);
+                    else if (!petItem.IsFavorite)
+                        favoritePaths.Remove(petItem.DirectoryPath);
+                }
+                SaveFavorites();
             }
         }
 
