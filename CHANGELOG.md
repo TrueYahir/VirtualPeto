@@ -129,3 +129,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.2.3] - 2026-07-24
 ### Added
 - Added favorite options, and filters for favorites.
+- Added the option to initialize pets when starting the program.
+
+## [2.2.4] - 2026-07-26
+### Fixed
+- Fixed a problem when creating a smart pet, it was not displayed in the list of smart pets.
+
+### Added
+- Items
+
+## [2.2.5] - 2026-08-01
+### Changed 
+- Changes to the object creation interface.
+- Changes in the way GIF are generated. 
+
+### Added
+- Now you can choose specific colors to delete in the GIF remover window.
+- Now you can create tools/foods in the same window.
+
+### Planned
+- The next version will be the last update before the legacy version.

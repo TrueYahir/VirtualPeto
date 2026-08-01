@@ -24,6 +24,7 @@ using ImageMagick;
 using System.Runtime.InteropServices;
 
 using VirtualPeto.Tools;
+using VirtualPeto.Objects;
 
 
 namespace VirtualPeto
@@ -228,6 +229,10 @@ namespace VirtualPeto
             LoadPets();
             TxtPetLimit.Text = petLimit.ToString();
             ChkRunOnStartup.IsChecked = runOnStartup;
+            if (SettingsManager.Current.StartFavoritesOnStartup)
+            {
+                StartFavoritePetsAutomatically();
+            }
 
             _previewAnimTimer.Tick += (s, e) =>
             {
@@ -258,6 +263,7 @@ namespace VirtualPeto
         private void LoadConfig()
         {
             ChkRunOnStartup.IsChecked = SettingsManager.Current.RunOnStartup;
+            ChkStartFavorites.IsChecked = SettingsManager.Current.StartFavoritesOnStartup;
             ChkAutoClearCache.IsChecked = SettingsManager.Current.AutoClearCache;
             ChkOverlapping.IsChecked = SettingsManager.Current.AllowOverlay;
             ChkLockPet.IsChecked = SettingsManager.Current.LockPetPosition;
@@ -1168,6 +1174,7 @@ namespace VirtualPeto
         {
             PetCreatorWindow PetCreator = new PetCreatorWindow();
             PetCreator.ShowDialog();
+            LoadPets();
         }
         private void BtnEditPetCreator_Click(object sender, RoutedEventArgs e)
         {
@@ -1192,7 +1199,6 @@ namespace VirtualPeto
                                 {
                                     if (doc.RootElement.TryGetProperty("IsSmartPet", out JsonElement isSmartElement))
                                     {
-                                        // Comprobamos si es true (ya sea booleano real o guardado como texto "true")
                                         if (isSmartElement.ValueKind == JsonValueKind.True) isSmartPet = true;
                                         else if (isSmartElement.ValueKind == JsonValueKind.String && isSmartElement.GetString()?.ToLower() == "true") isSmartPet = true;
                                         else if (isSmartElement.ValueKind == JsonValueKind.Number && isSmartElement.GetInt32() == 1) isSmartPet = true;
@@ -1203,13 +1209,14 @@ namespace VirtualPeto
                     }
                     if (!isSmartPet)
                     {
-                        MessageBox.Show("This is a simple GIF Package, not a Smart Pet. Please use the appropriate editor.", "Incompatible File", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show("This is a GIF Package, not a Smart Pet.", "Incompatible File", MessageBoxButton.OK, MessageBoxImage.Information);
                         return;
                     }
                     PetCreatorWindow editorWindow = new PetCreatorWindow();
                     editorWindow.Owner = this;
                     editorWindow.LoadPetDataForEditing(openFileDialog.FileName);
                     editorWindow.ShowDialog();
+                    LoadPets();
                 }
                 catch (Exception ex)
                 {
@@ -1289,6 +1296,53 @@ namespace VirtualPeto
             GifPackageWindow packager = new GifPackageWindow();
             packager.Owner = this;
             packager.ShowDialog();
+            LoadLibrary();
+        }
+
+        //Items Logic
+
+        private void BtnOpenFoodCreator_Click(object sender, RoutedEventArgs e)
+        {
+            FoodCreatorWindow foodCreator = new FoodCreatorWindow();
+            bool? result = foodCreator.ShowDialog();
+        }
+
+        private void BtnEditFoodCreator_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Filter = "Virtual Pet Food Files (*.vfood)|*.vfood", 
+                Title = "Select a food file to edit"
+            };
+            
+            if(openFileDialog.ShowDialog() == true)
+            {
+                MessageBox.Show($"Editando el archivo de comida: {openFileDialog.FileName}", "En Construcción", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        // === EVENTOS DE OBJETOS ===
+
+        private void BtnOpenObjectCreator_Click(object sender, RoutedEventArgs e)
+        {
+            VirtualPeto.Objects.ObjectCreatorWindow objectCreator = new VirtualPeto.Objects.ObjectCreatorWindow();
+    
+            bool? result = objectCreator.ShowDialog();
+        }
+
+        private void BtnEditObjectCreator_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Filter = "Virtual Pet Object Files (*.vobj)|*.vobj", 
+                Title = "Select an object file to edit"
+            };
+            
+            if(openFileDialog.ShowDialog() == true)
+            {
+                // Lógica de edición de objetos
+                MessageBox.Show($"Editando el archivo de objeto: {openFileDialog.FileName}", "En Construcción", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
         }
 
         // Tools logic
@@ -1464,6 +1518,85 @@ namespace VirtualPeto
             {
                 MessageBox.Show("Could not update startup setting: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+        private void ChkStartFavorites_Checked(object sender, RoutedEventArgs e)
+        {
+            SettingsManager.Current.StartFavoritesOnStartup = true;
+            SettingsManager.Save();
+        }
+
+        private void ChkStartFavorites_Unchecked(object sender, RoutedEventArgs e)
+        {
+            SettingsManager.Current.StartFavoritesOnStartup = false;
+            SettingsManager.Save();
+        }
+
+        private void StartFavoritePetsAutomatically()
+        {
+            foreach(var item in fullLibraryList.Where(x => x.IsFavorite))
+            {
+                if(TotalActiveDesktopWindows >= petLimit) break;
+                string libraryKey = NormalizePath(item.FullPath);
+                if(activeLibraryWindows.ContainsKey(libraryKey)) continue;
+                
+                string soundPath = item.HasSound && !string.IsNullOrEmpty(item.SoundPath) ? item.SoundPath : string.Empty;
+                MainWindow newWindow = new MainWindow(
+                    mediaPath: item.FullPath,
+                    isVideo: item.IsVideo,
+                    size: 150,
+                    soundPath: soundPath,
+                    volume: item.Volume
+                );
+                
+                newWindow.ShowInTaskbar = false;
+                newWindow.Closed += (s, args) =>
+                {
+                    item.IsActive = false;
+                    activeLibraryWindows.Remove(libraryKey);
+                    ApplyLibraryFilters();
+                    if(autoClearCache) ClearApplicationCache(includeActiveWindows: false);
+                };
+                
+                activeLibraryWindows.Add(libraryKey, newWindow);
+                item.IsActive = true;
+                newWindow.Show();
+            } 
+            foreach (var item in fullPetsList.Where(x => x.IsFavorite))
+            {
+                if (TotalActiveDesktopWindows >= petLimit) break;
+                
+                string petKey = NormalizePath(item.DirectoryPath);
+                if (activePetsWindows.ContainsKey(petKey)) continue;
+
+                Window newWindow;
+                if (item.SmartConfig != null && item.SmartConfig.IsSmartPet)
+                {
+                    newWindow = new SmartPetWindow(item.SmartConfig, item.DirectoryPath);
+                }
+                else
+                {
+                    string idleAnim = item.Config?.Animations?.Idle ?? string.Empty;
+                    string idlePath = string.IsNullOrEmpty(idleAnim) ? string.Empty : Path.Combine(item.DirectoryPath, idleAnim);
+                    double scale = item.Config?.Scale ?? 1.0;
+                    newWindow = new MainWindow(idlePath, false, 150 * scale, string.Empty, 0.5);
+                }
+
+                newWindow.ShowInTaskbar = false;
+                newWindow.Closed += (s, args) =>
+                {
+                    item.IsActive = false;
+                    activePetsWindows.Remove(petKey);
+                    UpdateActivePetStatus();
+                    if (autoClearCache) ClearApplicationCache(includeActiveWindows: false);
+                };
+
+                activePetsWindows.Add(petKey, newWindow);
+                item.IsActive = true;
+                newWindow.Show();
+            }
+            
+            ApplyLibraryFilters();
+            UpdateActivePetStatus();
         }
 
         private string? GetExecutablePath()

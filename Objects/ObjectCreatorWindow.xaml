@@ -1,0 +1,134 @@
+<Window x:Class="VirtualPeto.Objects.ObjectCreatorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Object Creator" Height="560" Width="900"
+        Background="#1A1A24" WindowStartupLocation="CenterOwner" ResizeMode="CanResize">
+    <Window.Resources>
+        <Style x:Key="LabelStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+
+        <Style x:Key="InputTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="#1A1A24"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3A3A4A"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+
+        <Style x:Key="InputComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Background" Value="#1A1A24"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="BorderBrush" Value="#3A3A4A"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Background" Value="#1A1A24"/>
+                        <Setter Property="Padding" Value="8,4"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter Property="Background" Value="#3A3A4A"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#4A90E2"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#4A90E2"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#2C2C3A"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="340"/>
+            <ColumnDefinition Width="16"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Background="#252538" CornerRadius="8" Padding="16" BorderBrush="#333" BorderThickness="1">
+            <StackPanel>
+                <TextBlock Text="Create New Object" FontSize="20" FontWeight="Bold" Foreground="#4A90E2" Margin="0,0,0,14"/>
+
+                <TextBlock Text="Object Name" Style="{StaticResource LabelStyle}"/>
+                <TextBox x:Name="TxtObjectName" Style="{StaticResource InputTextBoxStyle}"/>
+
+                <TextBlock Text="Type" Style="{StaticResource LabelStyle}"/>
+                <ComboBox x:Name="CmbCategory" Style="{StaticResource InputComboBoxStyle}">
+                    <ComboBoxItem Content="Food" IsSelected="True"/>
+                    <ComboBoxItem Content="Object"/>
+                </ComboBox>
+
+                <TextBlock Text="Object Image" Style="{StaticResource LabelStyle}"/>
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="TxtImagePath" Grid.Column="0" Style="{StaticResource InputTextBoxStyle}" Margin="0" IsReadOnly="True"/>
+                    <Button x:Name="BtnBrowseImage" Grid.Column="1" Content="Browse" Click="BtnBrowseImage_Click" Margin="8,0,0,0" Padding="12,6" Style="{StaticResource SecondaryButtonStyle}"/>
+                </Grid>
+
+                <TextBlock Text="Happiness Bonus" Style="{StaticResource LabelStyle}"/>
+                <TextBox x:Name="TxtHappinessBonus" Text="25" Style="{StaticResource InputTextBoxStyle}"/>
+
+                <TextBlock Text="Durability Uses" Style="{StaticResource LabelStyle}"/>
+                <TextBox x:Name="TxtDurabilityUses" Text="10" Style="{StaticResource InputTextBoxStyle}"/>
+
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                    <Button x:Name="BtnSave" Content="Save Object" Style="{StaticResource PrimaryButtonStyle}" Click="BtnSave_Click"/>
+                    <Button x:Name="BtnCancel" Content="Cancel" Style="{StaticResource SecondaryButtonStyle}" Click="BtnCancel_Click"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Column="2" Background="#252538" CornerRadius="8" Padding="16" BorderBrush="#333" BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Text="Preview" FontSize="16" FontWeight="SemiBold" Foreground="#4A90E2" Margin="0,0,0,10"/>
+                <Border Grid.Row="1" Background="#1A1A24" CornerRadius="6" BorderBrush="#3A3A4A" BorderThickness="1">
+                    <Grid>
+                        <Image x:Name="ImgPreview" Stretch="Uniform"/>
+                        <TextBlock x:Name="TxtPreviewHint"
+                                   Text="Select an image to preview."
+                                   Foreground="#808090"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   FontStyle="Italic"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

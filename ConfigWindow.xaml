@@ -190,6 +190,69 @@
             <Setter Property="FontSize" Value="16" />
             <Setter Property="FontWeight" Value="Bold" />
         </Style>
+        <SolidColorBrush x:Key="CreatorButtonBg" Color="#252538"/>
+    
+        <Style TargetType="Button" x:Key="AnimatedCreatorButton">
+            <Setter Property="Background" Value="{StaticResource CreatorButtonBg}"/>
+            <Setter Property="Foreground" Value="#4A90E2"/>
+            <Setter Property="BorderBrush" Value="#333"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="8"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </Border.RenderTransform>
+                            
+                            <TextBlock Text="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                    FontSize="20" FontWeight="Bold" Foreground="{TemplateBinding Foreground}" 
+                                    TextWrapping="Wrap" TextAlignment="Center" Margin="10"/>
+                        </Border>
+                        
+                        <ControlTemplate.Triggers>
+                            <EventTrigger RoutedEvent="MouseEnter">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <ColorAnimation Storyboard.TargetName="border" 
+                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" 
+                                                        To="#2E2E42" Duration="0:0:0.15"/>
+                                        <DoubleAnimation Storyboard.TargetName="border" 
+                                                        Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleX)" 
+                                                        To="1.03" Duration="0:0:0.15"/>
+                                        <DoubleAnimation Storyboard.TargetName="border" 
+                                                        Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleY)" 
+                                                        To="1.03" Duration="0:0:0.15"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="MouseLeave">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <ColorAnimation Storyboard.TargetName="border" 
+                                                        Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" 
+                                                        To="#252538" Duration="0:0:0.2"/>
+                                        <DoubleAnimation Storyboard.TargetName="border" 
+                                                        Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleX)" 
+                                                        To="1" Duration="0:0:0.2"/>
+                                        <DoubleAnimation Storyboard.TargetName="border" 
+                                                        Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleY)" 
+                                                        To="1" Duration="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         </Window.Resources>
         <!-- RIGHT PANEL-->
         <Grid>
@@ -301,52 +364,55 @@
                         </Grid>
 
                         <Border Grid.Column="1" Background="#1A1A24" CornerRadius="10" Padding="15">
-                            <StackPanel>
-                                <TextBlock x:Name="TxtSelectedLibraryName" Text="None selected" FontWeight="Bold" TextAlignment="Center" Margin="0,0,0,10" Foreground="White"/>
-                                <Border Height="150" Background="Black" Margin="0,0,0,15">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/> 
+                                    <RowDefinition Height="*"/>    
+                                    <RowDefinition Height="Auto"/> 
+                                </Grid.RowDefinitions>
+                                <TextBlock x:Name="TxtSelectedLibraryName" Grid.Row="0" Text="None selected" FontWeight="Bold" TextAlignment="Center" Margin="0,0,0,10" Foreground="White"/>
+                                <Border Grid.Row="1" Background="Black" Margin="0,0,0,15">
                                     <Grid>
                                         <TextBlock x:Name="TxtEmptyLibraryPreview" Text="No preview" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="Gray"/>
                                         <Image x:Name="ImgLibraryPreview" Stretch="Uniform"/>
                                         <MediaElement x:Name="VidLibraryPreview" Stretch="Uniform" LoadedBehavior="Manual" UnloadedBehavior="Stop" Visibility="Collapsed" IsMuted="True" MediaEnded="VidLibraryPreview_MediaEnded"/>
                                     </Grid>
                                 </Border>
-                                
-                                <StackPanel x:Name="PnlSize" Visibility="Collapsed" Margin="0,0,0,15">
-                                    <TextBlock Text="Size (Pixels):" Margin="0,0,0,5" Foreground="White"/>
-                                    <Slider x:Name="SldSize" Minimum="50" Maximum="500" Value="150"/>
-                                </StackPanel>
-
-                                <StackPanel x:Name="PnlFps" Visibility="Collapsed" Margin="0,0,0,15">
-                                    <TextBlock Text="GIF Speed (FPS):" Margin="0,0,0,5" Foreground="White"/>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                        <Button Content="-" Width="30" Click="BtnDecreaseFps_Click" Background="#2C2C3A" Foreground="White"/>
-                                        <TextBox x:Name="TxtFps" Text="15" Width="50" TextAlignment="Center" Margin="5,0" Background="#1A1A24" Foreground="White" BorderBrush="#333"/>
-                                        <Button Content="+" Width="30" Click="BtnIncreaseFps_Click" Background="#2C2C3A" Foreground="White"/>
+                                <StackPanel Grid.Row="2">
+                                    <StackPanel x:Name="PnlSize" Visibility="Collapsed" Margin="0,0,0,15">
+                                        <TextBlock Text="Size (Pixels):" Margin="0,0,0,5" Foreground="White"/>
+                                        <Slider x:Name="SldSize" Minimum="50" Maximum="500" Value="150"/>
                                     </StackPanel>
-                                </StackPanel>
 
-                                <StackPanel x:Name="PnlAudio" Margin="0,0,0,15" 
-                                            Visibility="{Binding SelectedItem.HasSound, ElementName=LstLibrary, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
-                                    <TextBlock Text="Audio:" FontWeight="Bold" Foreground="#4A90E2" Margin="0,0,0,5"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Button Content="🔊 Play" Click="BtnTestLibrarySound_Click" Padding="8,4" Background="#2C2C3A" Foreground="White" Margin="0,0,10,0"/>
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                            <TextBlock Text="Volume:" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="#AAA"/>
-                                            <Slider Width="100" Minimum="0" Maximum="1" 
-                                                    Value="{Binding SelectedItem.Volume, ElementName=LstLibrary, Mode=TwoWay}" 
-                                                    VerticalAlignment="Center"/>
+                                    <StackPanel x:Name="PnlFps" Visibility="Collapsed" Margin="0,0,0,15">
+                                        <TextBlock Text="GIF Speed (FPS):" Margin="0,0,0,5" Foreground="White"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <Button Content="-" Width="30" Click="BtnDecreaseFps_Click" Background="#2C2C3A" Foreground="White"/>
+                                            <TextBox x:Name="TxtFps" Text="15" Width="50" TextAlignment="Center" Margin="5,0" Background="#1A1A24" Foreground="White" BorderBrush="#333"/>
+                                            <Button Content="+" Width="30" Click="BtnIncreaseFps_Click" Background="#2C2C3A" Foreground="White"/>
                                         </StackPanel>
-                                    </Grid>
-                                </StackPanel>
+                                    </StackPanel>
 
-                                <Button Content="Launch Pet" Click="BtnLaunchLibrary_Click" Background="#2C2C3A" Foreground="White" Padding="10,5" Margin="0,0,0,10"/>
-                                <Button Content="Close Active Pet" Click="BtnCloseLibrary_Click" Background="#4A2C2C" Foreground="White" Padding="10,5" Margin="0,0,0,10" Visibility="{Binding SelectedItem.IsActive, ElementName=LstLibrary, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}"/>
-                                <Button Content="Delete" Click="BtnDeleteLibrary_Click" Background="#E24A4A" Foreground="White" Padding="5"/>
-                            </StackPanel>
+                                    <StackPanel x:Name="PnlAudio" Margin="0,0,0,15" Visibility="{Binding SelectedItem.HasSound, ElementName=LstLibrary, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                                        <TextBlock Text="Audio:" FontWeight="Bold" Foreground="#4A90E2" Margin="0,0,0,5"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Content="🔊 Play" Click="BtnTestLibrarySound_Click" Padding="8,4" Background="#2C2C3A" Foreground="White" Margin="0,0,10,0"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock Text="Volume:" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="#AAA"/>
+                                                <Slider Width="100" Minimum="0" Maximum="1" Value="{Binding SelectedItem.Volume, ElementName=LstLibrary, Mode=TwoWay}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <Button Content="Launch Pet" Click="BtnLaunchLibrary_Click" Background="#2C2C3A" Foreground="White" Padding="10,5" Margin="0,0,0,10"/>
+                                    <Button Content="Close Active Pet" Click="BtnCloseLibrary_Click" Background="#4A2C2C" Foreground="White" Padding="10,5" Margin="0,0,0,10" Visibility="{Binding SelectedItem.IsActive, ElementName=LstLibrary, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}"/>
+                                    <Button Content="Delete" Click="BtnDeleteLibrary_Click" Background="#E24A4A" Foreground="White" Padding="5"/>
+                                </StackPanel>
+                            </Grid>
                         </Border>
                     </Grid>
                 </TabItem>
@@ -453,18 +519,27 @@
                     </Grid>
 
                     <Border Grid.Column="1" Background="#1A1A24" CornerRadius="10" Padding="15">
-                        <StackPanel>
-                            <TextBlock x:Name="TxtSelectedPetName" Text="None selected" FontWeight="Bold" TextAlignment="Center" Margin="0,0,0,10" Foreground="White"/>
-                            <Border Height="150" Background="Black" Margin="0,0,0,15">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/> 
+                                <RowDefinition Height="*"/>    
+                                <RowDefinition Height="Auto"/> 
+                            </Grid.RowDefinitions>
+
+                            <TextBlock x:Name="TxtSelectedPetName" Grid.Row="0" Text="None selected" FontWeight="Bold" TextAlignment="Center" Margin="0,0,0,10" Foreground="White"/>
+                            <Border Grid.Row="1" Background="Black" Margin="0,0,0,15">
                                 <Grid>
                                     <TextBlock x:Name="TxtEmptyPetPreview" Text="No preview" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="Gray"/>
                                     <Image x:Name="ImgPetPreview" Stretch="Uniform"/>
                                 </Grid>
                             </Border>
-                            <Button Content="Launch Pet" Click="BtnLaunchPet_Click" Background="#2C2C3A" Foreground="White" Padding="10,5" Margin="0,0,0,10"/>
-                            <Button Content="Close Active Pet" Click="BtnClosePet_Click" Background="#4A2C2C" Foreground="White" Padding="10,5" Margin="0,0,0,10" Visibility="{Binding SelectedItem.IsActive, ElementName=LstPets, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}"/>
-                            <Button Content="Delete" Click="BtnDeletePet_Click" Background="#E24A4A" Foreground="White" Padding="5"/>
-                        </StackPanel>
+                            
+                            <StackPanel Grid.Row="2">
+                                <Button Content="Launch Pet" Click="BtnLaunchPet_Click" Background="#2C2C3A" Foreground="White" Padding="10,5" Margin="0,0,0,10"/>
+                                <Button Content="Close Active Pet" Click="BtnClosePet_Click" Background="#4A2C2C" Foreground="White" Padding="10,5" Margin="0,0,0,10" Visibility="{Binding SelectedItem.IsActive, ElementName=LstPets, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}"/>
+                                <Button Content="Delete" Click="BtnDeletePet_Click" Background="#E24A4A" Foreground="White" Padding="5"/>
+                            </StackPanel>
+                        </Grid>
                     </Border>
                 </Grid>
             </TabItem>
@@ -540,6 +615,8 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -565,6 +642,17 @@
                             Content="Edit GIF Package (.vpet)" 
                             Grid.Row="1" Grid.Column="1" 
                             Style="{StaticResource AnimatedCreateButton}"/>   
+
+                    <Button x:Name="BtnOpenFoodCreator" Click="BtnOpenFoodCreator_Click" 
+                            Content="Create New Food" Grid.Row="2" Grid.Column="0" Style="{StaticResource AnimatedCreatorButton}"/>
+                    <Button x:Name="BtnEditFoodCreator" Click="BtnEditFoodCreator_Click" 
+                            Content="Edit Food File" Grid.Row="2" Grid.Column="1" Style="{StaticResource AnimatedCreatorButton}"/>
+
+                    <Button x:Name="BtnOpenObjectCreator" Click="BtnOpenObjectCreator_Click" 
+                            Content="Create New Object" Grid.Row="3" Grid.Column="0" Style="{StaticResource AnimatedCreatorButton}"/>
+                    <Button x:Name="BtnEditObjectCreator" Click="BtnEditObjectCreator_Click" 
+                            Content="Edit Object File" Grid.Row="3" Grid.Column="1" Style="{StaticResource AnimatedCreatorButton}"/>
+                
                 </Grid>
             </TabItem>
 
@@ -668,6 +756,10 @@
                                 <CheckBox x:Name="ChkRunOnStartup" Content="Start program when computer starts" Foreground="White" Margin="0,0,0,4" 
                                         Checked="ChkRunOnStartup_Checked" Unchecked="ChkRunOnStartup_Unchecked"/>
                                 <TextBlock Text="Toggle whether VirtualPeto opens automatically on Windows sign in." 
+                                        Foreground="#AAAAAA" TextWrapping="Wrap" Margin="20,0,0,20" FontSize="11"/>
+                                <CheckBox x:Name="ChkStartFavorites" Content="Start favorite pets on launch" Foreground="White" Margin="0,0,0,4" 
+                                        Checked="ChkStartFavorites_Checked" Unchecked="ChkStartFavorites_Unchecked"/>
+                                <TextBlock Text="Automatically start pets marked as favorites when the program opens." 
                                         Foreground="#AAAAAA" TextWrapping="Wrap" Margin="20,0,0,20" FontSize="11"/>
                                 
                                 <TextBlock Text="Memory &amp; Cache" FontWeight="SemiBold" Foreground="#DDD" Margin="0,0,0,8"/>

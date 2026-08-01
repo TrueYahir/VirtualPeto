@@ -493,7 +493,7 @@ namespace VirtualPeto
                     return;
                 }
 
-                AnimationSettingsWindow settingsWin = new AnimationSettingsWindow(targetAnim, System.IO.Path.GetDirectoryName(_currentEditingFilePath) ?? "");
+                AnimationSettingsWindow settingsWin = new AnimationSettingsWindow(targetAnim, System.IO.Path.GetDirectoryName(_currentEditingFilePath) ?? "", targetAnim.FilePath);
                 settingsWin.Owner = this;
                 settingsWin.ShowDialog();
             }

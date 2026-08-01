@@ -12,5 +12,6 @@ namespace VirtualPeto
         public bool AllowSecondMonitor { get; set; } = false;
         public int DesktopPetLimit { get; set; } = 5;
         public int SleepTimeMinutes { get; set; } = 15;
+        public bool StartFavoritesOnStartup { get; set; } = false;
     }
 }
