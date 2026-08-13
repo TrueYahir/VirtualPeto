@@ -26,6 +26,7 @@
   <ItemGroup>
     <Resource Include="Assets\itch_io_logo_icon.png" />
     <Resource Include="Assets\ko_fi_logo_icon.png" />
+    <Resource Include="Assets\discord_logo_icon.png" />
   </ItemGroup>
 
   <PropertyGroup>

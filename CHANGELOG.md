@@ -149,3 +149,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - The next version will be the last update before the legacy version.
+
+## [2.2.6] - 2026-08-01
+### Added
+- Video BG Remover added (Remove background of videos with a specific color)

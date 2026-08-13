@@ -643,15 +643,17 @@
                             Grid.Row="1" Grid.Column="1" 
                             Style="{StaticResource AnimatedCreateButton}"/>   
 
-                    <Button x:Name="BtnOpenFoodCreator" Click="BtnOpenFoodCreator_Click" 
+                    
+                    <!-- <Button x:Name="BtnOpenFoodCreator" Click="BtnOpenFoodCreator_Click" 
                             Content="Create New Food" Grid.Row="2" Grid.Column="0" Style="{StaticResource AnimatedCreatorButton}"/>
                     <Button x:Name="BtnEditFoodCreator" Click="BtnEditFoodCreator_Click" 
-                            Content="Edit Food File" Grid.Row="2" Grid.Column="1" Style="{StaticResource AnimatedCreatorButton}"/>
+                            Content="Edit Food File" Grid.Row="2" Grid.Column="1" Style="{StaticResource AnimatedCreatorButton}"/> -->
+                            
 
                     <Button x:Name="BtnOpenObjectCreator" Click="BtnOpenObjectCreator_Click" 
-                            Content="Create New Object" Grid.Row="3" Grid.Column="0" Style="{StaticResource AnimatedCreatorButton}"/>
-                    <Button x:Name="BtnEditObjectCreator" Click="BtnEditObjectCreator_Click" 
-                            Content="Edit Object File" Grid.Row="3" Grid.Column="1" Style="{StaticResource AnimatedCreatorButton}"/>
+                            Content="Create New Object" Grid.Row="2" Grid.Column="0" Style="{StaticResource AnimatedCreatorButton}"/>
+                    <!-- <Button x:Name="BtnEditObjectCreator" Click="BtnEditObjectCreator_Click" 
+                            Content="Edit Object File" Grid.Row="3" Grid.Column="1" Style="{StaticResource AnimatedCreatorButton}"/> -->
                 
                 </Grid>
             </TabItem>
@@ -731,6 +733,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -741,6 +744,7 @@
                     <Button Grid.Row="0" Grid.Column="1" Content="Image Font Remover" Click="BtnLaunchBgRemover_Click" Style="{StaticResource AnimatedToolButton}"/>
                     <Button Grid.Row="1" Grid.Column="0" Content="GIF Background Remover" Click="BtnLaunchGifRemover_Click" Style="{StaticResource AnimatedToolButton}"/>
                     <Button Grid.Row="1" Grid.Column="1" Content="Sprite Sheet Cutter" Click="BtnLaunchSpriteExtractor_Click" Style="{StaticResource AnimatedToolButton}"/>
+                    <Button Grid.Row="2" Grid.Column="0" Content="Video Bg Remover" Click="BtnLaunchVideoBgRemover_Click" Style="{StaticResource AnimatedToolButton}"/>
                 </Grid>
             </TabItem>
 
@@ -843,8 +847,15 @@
                             <TextBlock Text="Ko-fi" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
+
+                    <Button Click="BtnOpenDiscord_Click" Background="#2C2C3A" Foreground="White" BorderThickness="0" Padding="8,3" Margin="0,0,6,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Image Source="/Assets/discord_logo_icon.png" Width="14" Height="14" Margin="0,0,5,0" Stretch="Uniform"/>
+                            <TextBlock Text="Discord" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
-                <TextBlock Text="v2.2-beta" Foreground="#AAA" VerticalAlignment="Center" Grid.Column="1"/>
+                <TextBlock Text="v2.2.5-beta" Foreground="#AAA" VerticalAlignment="Center" Grid.Column="1"/>
             </Grid>
         </Border>
     </Grid>

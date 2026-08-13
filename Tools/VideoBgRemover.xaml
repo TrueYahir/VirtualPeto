@@ -1,0 +1,52 @@
+<Window x:Class="VirtualPeto.Tools.VideoBgRemoverWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Video Background Remover" Height="420" Width="450"
+        Background="#1A1A24" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <Window.Resources>
+        <Style x:Key="LabelStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        <Style x:Key="InputTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="#1A1A24"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#3A3A4A"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#4A90E2"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Border Background="#252538" CornerRadius="8" Padding="14" BorderBrush="#333" BorderThickness="1">
+            <StackPanel>
+                <TextBlock Text="Video Background Remover" FontSize="20" FontWeight="Bold" Foreground="#4A90E2" Margin="0,0,0,12"/>
+                
+                <TextBlock Text="Selected File" Style="{StaticResource LabelStyle}"/>
+                <TextBlock x:Name="TxtFileName" Text="No file selected" Foreground="#DDDDDD" Margin="0,0,0,12"/>
+
+                <TextBlock Text="Chroma Key Color (Hex)" Style="{StaticResource LabelStyle}"/>
+                <TextBox x:Name="TxtColorCode" Text="0x00FF00" Style="{StaticResource InputTextBoxStyle}"/>
+
+                <TextBlock Text="Similarity (0.01 - 1.0)" Style="{StaticResource LabelStyle}"/>
+                <TextBox x:Name="TxtSimilarity" Text="0.1" Style="{StaticResource InputTextBoxStyle}"/>
+                
+                <TextBlock Text="Blend (0.0 - 1.0)" Style="{StaticResource LabelStyle}"/>
+                <TextBox x:Name="TxtBlend" Text="0.2" Style="{StaticResource InputTextBoxStyle}"/>
+
+                <Button x:Name="BtnProcess" Content="Process Video" Click="BtnProcess_Click" Style="{StaticResource PrimaryButtonStyle}" Margin="0,15,0,0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

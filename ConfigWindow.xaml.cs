@@ -1415,6 +1415,23 @@ namespace VirtualPeto
             creatorWindow.ShowDialog();
         }
 
+        private void BtnLaunchVideoBgRemover_Click(object sender, RoutedEventArgs e)
+        {
+            Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Video Files (*.mp4;*.mov;*.avi;*.mkv)|*.mp4;*.mov;*.avi;*.mkv",
+                Title = "Select Video for Background Removal"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                VirtualPeto.Tools.VideoBgRemoverWindow removerWindow = new VirtualPeto.Tools.VideoBgRemoverWindow(openFileDialog.FileName, libraryPath);
+                removerWindow.Owner = this;
+                removerWindow.ShowDialog();
+                LoadLibrary(); 
+            }
+        }
+
         // === SETTINGS ===
         private void ChkAutoClearCache_Checked(object sender, RoutedEventArgs e) => autoClearCache = true;
         private void ChkAutoClearCache_Unchecked(object sender, RoutedEventArgs e) => autoClearCache = false;
@@ -1732,6 +1749,14 @@ namespace VirtualPeto
             Process.Start(new ProcessStartInfo
             {
                 FileName = "https://ko-fi.com/trueyahir", 
+                UseShellExecute = true
+            });
+        }
+        private void BtnOpenDiscord_Click(object sender, RoutedEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "https://discord.gg/8mWSueKqS", 
                 UseShellExecute = true
             });
         }
