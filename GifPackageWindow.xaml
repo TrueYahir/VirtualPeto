@@ -39,8 +39,63 @@
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,15" x:Name="SoundControls" Visibility="Collapsed">
                 <Button Content="🔊 Play" Click="BtnPlaySound_Click" Background="#2C2C3A" Foreground="White" Padding="10,4" Margin="0,0,10,0"/>
-                <TextBlock Text="Default Volume:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                <Slider x:Name="SldVolume" Width="120" Minimum="0" Maximum="1" Value="0.5" VerticalAlignment="Center" ValueChanged="SldVolume_ValueChanged"/>
+                <TextBlock Text="Volume:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                <Slider x:Name="SldVolume" Width="120" 
+                        Minimum="0" Maximum="1" Value="0.5" 
+                        SmallChange="0.05" LargeChange="0.1"
+                        VerticalAlignment="Center" 
+                        ValueChanged="SldVolume_ValueChanged"
+                        PreviewMouseWheel="SldVolume_PreviewMouseWheel">
+                    <Slider.Style>
+                        <Style TargetType="Slider">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Slider">
+                                        <Grid VerticalAlignment="Center">
+                                            <!-- Línea delgada de fondo -->
+                                            <Border Height="4" Background="#3A3A4A" CornerRadius="2" Margin="7,0"/>
+                                            
+                                            <Track x:Name="PART_Track">
+                                                <!-- Botón invisible izquierdo -->
+                                                <Track.DecreaseRepeatButton>
+                                                    <RepeatButton Command="{x:Static Slider.DecreaseLarge}">
+                                                        <RepeatButton.Template>
+                                                            <ControlTemplate TargetType="RepeatButton">
+                                                                <Border Background="Transparent"/>
+                                                            </ControlTemplate>
+                                                        </RepeatButton.Template>
+                                                    </RepeatButton>
+                                                </Track.DecreaseRepeatButton>
+                                                
+                                                <!-- Botón invisible derecho -->
+                                                <Track.IncreaseRepeatButton>
+                                                    <RepeatButton Command="{x:Static Slider.IncreaseLarge}">
+                                                        <RepeatButton.Template>
+                                                            <ControlTemplate TargetType="RepeatButton">
+                                                                <Border Background="Transparent"/>
+                                                            </ControlTemplate>
+                                                        </RepeatButton.Template>
+                                                    </RepeatButton>
+                                                </Track.IncreaseRepeatButton>
+                                                
+                                                <Track.Thumb>
+                                                    <Thumb>
+                                                        <Thumb.Template>
+                                                            <ControlTemplate TargetType="Thumb">
+                                                                <!-- Control circular -->
+                                                                <Ellipse Width="14" Height="14" Fill="White" Cursor="Hand"/>
+                                                            </ControlTemplate>
+                                                        </Thumb.Template>
+                                                    </Thumb>
+                                                </Track.Thumb>
+                                            </Track>
+                                        </Grid>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Slider.Style>
+                </Slider>
                 <TextBlock x:Name="TxtVolumeVal" Text="50%" VerticalAlignment="Center" Margin="5,0,0,0" Foreground="#AAA"/>
             </StackPanel>
 
@@ -54,7 +109,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <TextBlock Text="Live Preview" HorizontalAlignment="Center" FontWeight="Bold" Foreground="#AAA" Margin="0,0,0,10"/>
+            <TextBlock Text="Preview" HorizontalAlignment="Center" FontWeight="Bold" Foreground="#AAA" Margin="0,0,0,10"/>
             <Border Grid.Row="1" Background="#16161F" CornerRadius="8" BorderBrush="#25252F" BorderThickness="1" Padding="10">
                 <Image x:Name="ImgPreview" Stretch="Uniform" MaxHeight="250" MaxWidth="250" VerticalAlignment="Center" HorizontalAlignment="Center"/>
             </Border>

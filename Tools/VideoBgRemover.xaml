@@ -1,7 +1,7 @@
 <Window x:Class="VirtualPeto.Tools.VideoBgRemoverWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Video Background Remover" Height="420" Width="450"
+        Title="Video Background Remover" Height="560" Width="820"
         Background="#1A1A24" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
     <Window.Resources>
         <Style x:Key="LabelStyle" TargetType="TextBlock">
@@ -29,24 +29,104 @@
     </Window.Resources>
 
     <Grid Margin="16">
-        <Border Background="#252538" CornerRadius="8" Padding="14" BorderBrush="#333" BorderThickness="1">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="14"/>
+            <ColumnDefinition Width="3*"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Background="#252538" CornerRadius="8" Padding="14" BorderBrush="#333" BorderThickness="1">
             <StackPanel>
                 <TextBlock Text="Video Background Remover" FontSize="20" FontWeight="Bold" Foreground="#4A90E2" Margin="0,0,0,12"/>
                 
                 <TextBlock Text="Selected File" Style="{StaticResource LabelStyle}"/>
-                <TextBlock x:Name="TxtFileName" Text="No file selected" Foreground="#DDDDDD" Margin="0,0,0,12"/>
+                <TextBlock x:Name="TxtFileName" Text="No file selected" Foreground="#DDDDDD" Margin="0,0,0,12" TextWrapping="Wrap"/>
 
                 <TextBlock Text="Chroma Key Color (Hex)" Style="{StaticResource LabelStyle}"/>
-                <TextBox x:Name="TxtColorCode" Text="0x00FF00" Style="{StaticResource InputTextBoxStyle}"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBox x:Name="TxtColorCode" Text="0x00FF00" Width="100" Style="{StaticResource InputTextBoxStyle}" Margin="0,0,10,0" TextChanged="TxtColorCode_TextChanged"/>
+                    <Border x:Name="ColorPreviewBox" Width="28" Height="28" Background="#00FF00" BorderBrush="#3A3A4A" BorderThickness="1" CornerRadius="4" VerticalAlignment="Top"/>
+                </StackPanel>
 
-                <TextBlock Text="Similarity (0.01 - 1.0)" Style="{StaticResource LabelStyle}"/>
-                <TextBox x:Name="TxtSimilarity" Text="0.1" Style="{StaticResource InputTextBoxStyle}"/>
-                
-                <TextBlock Text="Blend (0.0 - 1.0)" Style="{StaticResource LabelStyle}"/>
-                <TextBox x:Name="TxtBlend" Text="0.2" Style="{StaticResource InputTextBoxStyle}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Similarity (0.01 - 1.0)" Style="{StaticResource LabelStyle}"/>
+                        <TextBox x:Name="TxtSimilarity" Text="0.3" Style="{StaticResource InputTextBoxStyle}"/>
+                    </StackPanel>
+                    
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Blend (0.0 - 1.0)" Style="{StaticResource LabelStyle}"/>
+                        <TextBox x:Name="TxtBlend" Text="0.1" Style="{StaticResource InputTextBoxStyle}"/>
+                    </StackPanel>
+                </Grid>
 
-                <Button x:Name="BtnProcess" Content="Process Video" Click="BtnProcess_Click" Style="{StaticResource PrimaryButtonStyle}" Margin="0,15,0,0"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Target FPS" Style="{StaticResource LabelStyle}"/>
+                        <TextBox x:Name="TxtFps" Text="15" Style="{StaticResource InputTextBoxStyle}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Max Width (Pixels)" Style="{StaticResource LabelStyle}"/>
+                        <TextBox x:Name="TxtWidth" Text="400" Style="{StaticResource InputTextBoxStyle}"/>
+                    </StackPanel>
+                </Grid>
+
+                <CheckBox x:Name="ChkKeepAudio" Content="Keep Audio (Export as .vpetPackage)" Foreground="White" Margin="0,5,0,15" FontWeight="SemiBold"/>
+
+                <Button x:Name="BtnGeneratePreview" Content="Generate Preview" Click="BtnGeneratePreview_Click" Style="{StaticResource PrimaryButtonStyle}"/>
             </StackPanel>
+        </Border>
+
+        <Border Grid.Column="2" Background="#252538" CornerRadius="8" Padding="14" BorderBrush="#333" BorderThickness="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Video Preview" FontSize="16" FontWeight="SemiBold" Foreground="#4A90E2" Margin="0,0,0,10"/>
+                
+                <Grid Grid.Row="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="12"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <Border Background="#1A1A24" BorderBrush="#3A3A4A" BorderThickness="1" CornerRadius="6" ClipToBounds="True">
+                        <Grid>
+                            <MediaElement x:Name="MediaOriginal" LoadedBehavior="Manual" UnloadedBehavior="Close" Stretch="Uniform" MediaEnded="MediaOriginal_MediaEnded"/>
+                            <TextBlock Text="Original" Foreground="#D0D0D0" FontWeight="SemiBold" Margin="8,6,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                        </Grid>
+                    </Border>
+                    
+                    <Border Grid.Row="2" Background="#1A1A24" BorderBrush="#3A3A4A" BorderThickness="1" CornerRadius="6" ClipToBounds="True">
+                        <Grid>
+                            <MediaElement x:Name="MediaProcessed" LoadedBehavior="Manual" UnloadedBehavior="Close" Stretch="Uniform" MediaEnded="MediaProcessed_MediaEnded"/>
+                            <TextBlock Text="Processed Preview" Foreground="#D0D0D0" FontWeight="SemiBold" Margin="8,6,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                            <TextBlock x:Name="TxtPreviewHint" Text="Click 'Generate Preview' to view results." Foreground="#808090" HorizontalAlignment="Center" VerticalAlignment="Center" FontStyle="Italic"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+                
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0" HorizontalAlignment="Right">
+                    <Button x:Name="BtnSaveResult" Content="Save to Library" Click="BtnSaveResult_Click" Style="{StaticResource PrimaryButtonStyle}" IsEnabled="False"/>
+                </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </Window>

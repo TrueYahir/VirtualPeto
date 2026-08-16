@@ -12,17 +12,18 @@
         <DataTemplate x:Key="LibraryListTemplate">
             <Grid Margin="5">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="50"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="60"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="30"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0" Text="video" Visibility="{Binding VideoIconVisibility}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <Image Grid.Column="1" Source="{Binding Thumbnail}" Width="40" Height="40" Margin="0,0,10,0" Visibility="{Binding ImageIconVisibility}"/>
-                <TextBlock Grid.Column="2" Text="{Binding Name}" VerticalAlignment="Center" Foreground="White" TextTrimming="CharacterEllipsis" Margin="0,0,10,0"/>
-                <Ellipse Grid.Column="3" Width="10" Height="10" Fill="Lime" Margin="0,0,10,0" Visibility="{Binding VisibilityIndicator}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="0" Text="video" Visibility="{Binding VideoIconVisibility}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                <Image Grid.Column="0" Source="{Binding Thumbnail}" Width="40" Height="40" Visibility="{Binding ImageIconVisibility}" HorizontalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{Binding DisplayName}" VerticalAlignment="Center" Foreground="White" TextTrimming="CharacterEllipsis" Margin="10,0,10,0"/>
+                <TextBlock Grid.Column="2" Text="{Binding FileType}" VerticalAlignment="Center" Foreground="#A0A0A0" FontWeight="Bold" Margin="0,0,10,0"/>
+                <Ellipse Grid.Column="3" Width="10" Height="10" Fill="Lime" Margin="0,0,0,0" Visibility="{Binding VisibilityIndicator}" VerticalAlignment="Center"/>
 
                 <ToggleButton Grid.Column="4" IsChecked="{Binding IsFavorite, Mode=TwoWay}" Click="FavoriteToggle_Click" Cursor="Hand" Background="Transparent" BorderThickness="0" HorizontalAlignment="Right">
                     <ToggleButton.Template>
@@ -253,6 +254,37 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style TargetType="ScrollBar">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Width" Value="8" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="{TemplateBinding Background}">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False" />
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False" />
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Background="#4A4A5A" 
+                                                        CornerRadius="4" 
+                                                        Margin="1" />
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         </Window.Resources>
         <!-- RIGHT PANEL-->
         <Grid>
@@ -352,7 +384,20 @@
                                 </StackPanel>
                             </Grid>
 
-                            <ListBox x:Name="LstLibrary" Grid.Row="2" Background="#1A1A24" BorderBrush="#333" Foreground="White" SelectionChanged="LstLibrary_SelectionChanged" ItemTemplate="{StaticResource LibraryListTemplate}" ItemsPanel="{StaticResource LibraryGridItemsPanel}" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                            <Grid Grid.Row="2" Margin="5,10,5,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="50"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="20"/>
+                                    <ColumnDefinition Width="30"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <TextBlock Grid.Column="1" Text="Name" Foreground="#E04343" FontWeight="Bold" Margin="10,0,10,0"/>
+                                <TextBlock Grid.Column="2" Text="Type" Foreground="#E04343" FontWeight="Bold" Margin="0,0,10,0"/>
+                            </Grid>
+
+                            <ListBox x:Name="LstLibrary" Grid.Row="3" Background="#1A1A24" BorderBrush="#333" Foreground="White" SelectionChanged="LstLibrary_SelectionChanged" ItemTemplate="{StaticResource LibraryListTemplate}" ItemsPanel="{StaticResource LibraryGridItemsPanel}" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
                                 <ListBox.ItemContainerStyle>
                                     <Style TargetType="ListBoxItem">
                                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -380,31 +425,162 @@
                                 </Border>
                                 <StackPanel Grid.Row="2">
                                     <StackPanel x:Name="PnlSize" Visibility="Collapsed" Margin="0,0,0,15">
-                                        <TextBlock Text="Size (Pixels):" Margin="0,0,0,5" Foreground="White"/>
-                                        <Slider x:Name="SldSize" Minimum="50" Maximum="500" Value="150"/>
+                                        <TextBlock x:Name="TxtSizeLabel" Text="Size (Pixels): (150x150)" Margin="0,0,0,5" Foreground="White"/>
+                                        
+                                        <Slider x:Name="SldSize" Minimum="50" Maximum="500" Value="150" 
+                                                ValueChanged="SldSize_ValueChanged" 
+                                                PreviewMouseWheel="SldSize_PreviewMouseWheel"
+                                                Margin="0,5,0,15">
+                                            <Slider.Template>
+                                                <ControlTemplate TargetType="Slider">
+                                                    <Grid Height="20">
+                                                        <Border Height="2" Background="#444444" VerticalAlignment="Center" Margin="6,0"/>
+                                                        
+                                                        <Track Name="PART_Track">
+                                                            <Track.DecreaseRepeatButton>
+                                                                <RepeatButton Command="Slider.DecreaseLarge">
+                                                                    <RepeatButton.Template>
+                                                                        <ControlTemplate TargetType="RepeatButton">
+                                                                            <Border Height="2" Background="White" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                                                        </ControlTemplate>
+                                                                    </RepeatButton.Template>
+                                                                </RepeatButton>
+                                                            </Track.DecreaseRepeatButton>
+                                                            
+                                                            <Track.Thumb>
+                                                                <Thumb>
+                                                                    <Thumb.Template>
+                                                                        <ControlTemplate TargetType="Thumb">
+                                                                            <Ellipse Width="12" Height="12" Fill="White" Cursor="Hand"/>
+                                                                        </ControlTemplate>
+                                                                    </Thumb.Template>
+                                                                </Thumb>
+                                                            </Track.Thumb>
+                                                            
+                                                            <Track.IncreaseRepeatButton>
+                                                                <RepeatButton Command="Slider.IncreaseLarge">
+                                                                    <RepeatButton.Template>
+                                                                        <ControlTemplate TargetType="RepeatButton">
+                                                                            <Border Background="Transparent"/>
+                                                                        </ControlTemplate>
+                                                                    </RepeatButton.Template>
+                                                                </RepeatButton>
+                                                            </Track.IncreaseRepeatButton>
+                                                        </Track>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Slider.Template>
+                                        </Slider>
                                     </StackPanel>
 
                                     <StackPanel x:Name="PnlFps" Visibility="Collapsed" Margin="0,0,0,15">
-                                        <TextBlock Text="GIF Speed (FPS):" Margin="0,0,0,5" Foreground="White"/>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <Button Content="-" Width="30" Click="BtnDecreaseFps_Click" Background="#2C2C3A" Foreground="White"/>
-                                            <TextBox x:Name="TxtFps" Text="15" Width="50" TextAlignment="Center" Margin="5,0" Background="#1A1A24" Foreground="White" BorderBrush="#333"/>
-                                            <Button Content="+" Width="30" Click="BtnIncreaseFps_Click" Background="#2C2C3A" Foreground="White"/>
-                                        </StackPanel>
+                                        <TextBlock Text="GIF Speed (FPS):" Margin="0,0,0,8" Foreground="White" FontWeight="Bold"/>
+                                        
+                                        <Grid Height="28">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="40"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="40"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Grid.Resources>
+                                                <Style TargetType="Button" x:Key="DarkRoundedButton">
+                                                    <Setter Property="Background" Value="#1E1E26"/>
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                    <Setter Property="FontSize" Value="14"/>
+                                                    <Setter Property="BorderThickness" Value="0"/>
+                                                    <Setter Property="Cursor" Value="Hand"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border Background="{TemplateBinding Background}" 
+                                                                        CornerRadius="4">
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,2"/>
+                                                                </Border>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#2D2D38"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Grid.Resources>
+
+                                            <Button Grid.Column="0" Content="-" Style="{StaticResource DarkRoundedButton}" 
+                                                    Click="BtnDecreaseFps_Click"/>
+
+                                            <Border Grid.Column="1" Background="#1E1E26" CornerRadius="4" Margin="5,0">
+                                                <TextBox x:Name="TxtFps" Text="15" 
+                                                        Background="Transparent" Foreground="White" BorderThickness="0" 
+                                                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                                        FontWeight="Bold" IsReadOnly="True" Cursor="Arrow"/>
+                                            </Border>
+
+                                            <Button Grid.Column="2" Content="+" Style="{StaticResource DarkRoundedButton}" 
+                                                    Click="BtnIncreaseFps_Click"/>
+                                        </Grid>
                                     </StackPanel>
 
-                                    <StackPanel x:Name="PnlAudio" Margin="0,0,0,15" Visibility="{Binding SelectedItem.HasSound, ElementName=LstLibrary, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
-                                        <TextBlock Text="Audio:" FontWeight="Bold" Foreground="#4A90E2" Margin="0,0,0,5"/>
-                                        <Grid>
+                                    <StackPanel x:Name="PnlAudio" Visibility="Collapsed" Margin="0,0,0,15">
+                                        <TextBlock Text="Audio:" Margin="0,0,0,8" Foreground="#66A3FF" FontWeight="Bold"/>
+                                        
+                                        <Grid Height="30">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/> 
+                                                <ColumnDefinition Width="Auto"/> 
+                                                <ColumnDefinition Width="*"/>  
                                             </Grid.ColumnDefinitions>
-                                            <Button Content="🔊 Play" Click="BtnTestLibrarySound_Click" Padding="8,4" Background="#2C2C3A" Foreground="White" Margin="0,0,10,0"/>
-                                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                                <TextBlock Text="Volume:" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="#AAA"/>
-                                                <Slider Width="100" Minimum="0" Maximum="1" Value="{Binding SelectedItem.Volume, ElementName=LstLibrary, Mode=TwoWay}" VerticalAlignment="Center"/>
-                                            </StackPanel>
+
+                                            <Button x:Name="BtnMute" Grid.Column="0" Width="32" Height="28" Margin="0,0,10,0" Background="#1E1E26" BorderThickness="0" Cursor="Hand" Click="BtnTestLibrarySound_Click">
+                                                <TextBlock Text="🔊" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                            </Button>
+                                            
+                                            <TextBlock x:Name="TxtVolumeLabel" Grid.Column="1" Text="Volume: 50%" Foreground="White" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                            
+                                            <Slider x:Name="SldVolume" Grid.Column="2" Minimum="0" Maximum="100" Value="50" 
+                                                    VerticalAlignment="Center"
+                                                    ValueChanged="SldVolume_ValueChanged" 
+                                                    PreviewMouseWheel="SldVolume_PreviewMouseWheel">
+                                                <Slider.Template>
+                                                    <ControlTemplate TargetType="Slider">
+                                                        <Grid Height="20">
+                                                            <Border Height="2" Background="#444444" VerticalAlignment="Center" Margin="6,0"/>
+                                                            <Track Name="PART_Track">
+                                                                <Track.DecreaseRepeatButton>
+                                                                    <RepeatButton Command="Slider.DecreaseLarge">
+                                                                        <RepeatButton.Template>
+                                                                            <ControlTemplate TargetType="RepeatButton">
+                                                                                <Border Height="2" Background="White" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                                                            </ControlTemplate>
+                                                                        </RepeatButton.Template>
+                                                                    </RepeatButton>
+                                                                </Track.DecreaseRepeatButton>
+                                                                <Track.Thumb>
+                                                                    <Thumb>
+                                                                        <Thumb.Template>
+                                                                            <ControlTemplate TargetType="Thumb">
+                                                                                <Ellipse Width="12" Height="12" Fill="White" Cursor="Hand"/>
+                                                                            </ControlTemplate>
+                                                                        </Thumb.Template>
+                                                                    </Thumb>
+                                                                </Track.Thumb>
+                                                                <Track.IncreaseRepeatButton>
+                                                                    <RepeatButton Command="Slider.IncreaseLarge">
+                                                                        <RepeatButton.Template>
+                                                                            <ControlTemplate TargetType="RepeatButton">
+                                                                                <Border Background="Transparent"/>
+                                                                            </ControlTemplate>
+                                                                        </RepeatButton.Template>
+                                                                    </RepeatButton>
+                                                                </Track.IncreaseRepeatButton>
+                                                            </Track>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Slider.Template>
+                                            </Slider>
                                         </Grid>
                                     </StackPanel>
 
@@ -550,12 +726,16 @@
                         <SolidColorBrush x:Key="CreateButtonBg" Color="#252538"/>
                         
                         <Style TargetType="Button" x:Key="AnimatedCreateButton">
-                            <Setter Property="Background" Value="{StaticResource CreateButtonBg}"/>
-                            <Setter Property="Foreground" Value="#4A90E2"/>
+                        </Style>
+
+                       <Style TargetType="Button" x:Key="IconLeftButtonStyle">
+                            <Setter Property="Background" Value="{StaticResource CreateButtonBg}"/> 
+                            <Setter Property="Foreground" Value="White"/>
                             <Setter Property="BorderBrush" Value="#333"/>
                             <Setter Property="BorderThickness" Value="1"/>
                             <Setter Property="Cursor" Value="Hand"/>
                             <Setter Property="Margin" Value="10"/>
+                            <Setter Property="Padding" Value="15,10"/>
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="Button">
@@ -563,15 +743,44 @@
                                                 Background="{TemplateBinding Background}" 
                                                 BorderBrush="{TemplateBinding BorderBrush}" 
                                                 BorderThickness="{TemplateBinding BorderThickness}" 
-                                                CornerRadius="8"
+                                                CornerRadius="10"
+                                                Padding="{TemplateBinding Padding}"
                                                 RenderTransformOrigin="0.5,0.5">
                                             <Border.RenderTransform>
                                                 <ScaleTransform ScaleX="1" ScaleY="1"/>
                                             </Border.RenderTransform>
                                             
-                                            <TextBlock Text="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center" 
-                                                    FontSize="24" FontWeight="Bold" Foreground="{TemplateBinding Foreground}" 
-                                                    TextWrapping="Wrap" TextAlignment="Center" Margin="20"/>
+                                            <Grid HorizontalAlignment="Left" VerticalAlignment="Center" Margin="20,0,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <Border Grid.Column="0" Width="56" Height="56" Background="Transparent" Margin="0,0,20,0">
+                                                    <Image x:Name="iconImage" 
+                                                        Source="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" 
+                                                        Width="56" Height="56" Stretch="Uniform" 
+                                                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                        RenderTransformOrigin="0.5,0.5">
+                                                        <Image.RenderTransform>
+                                                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                                        </Image.RenderTransform>
+                                                    </Image>
+                                                </Border>
+
+                                                <TextBlock x:Name="buttonText" 
+                                                        Grid.Column="1"
+                                                        Text="{TemplateBinding Content}" 
+                                                        FontSize="22" FontWeight="Bold" 
+                                                        Foreground="{TemplateBinding Foreground}" 
+                                                        VerticalAlignment="Center"
+                                                        TextWrapping="Wrap"
+                                                        RenderTransformOrigin="0.5,0.5">
+                                                    <TextBlock.RenderTransform>
+                                                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                                    </TextBlock.RenderTransform>
+                                                </TextBlock>
+                                            </Grid>
                                         </Border>
                                         
                                         <ControlTemplate.Triggers>
@@ -580,13 +789,27 @@
                                                     <Storyboard>
                                                         <ColorAnimation Storyboard.TargetName="border" 
                                                                         Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" 
-                                                                        To="#2E2E42" Duration="0:0:0.15"/>
+                                                                        To="#2C2C3A" Duration="0:0:0.15"/>
                                                         <DoubleAnimation Storyboard.TargetName="border" 
-                                                                        Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleX)" 
-                                                                        To="1.03" Duration="0:0:0.15"/>
+                                                                        Storyboard.TargetProperty="RenderTransform.ScaleX" 
+                                                                        To="1.02" Duration="0:0:0.15"/>
                                                         <DoubleAnimation Storyboard.TargetName="border" 
-                                                                        Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleY)" 
-                                                                        To="1.03" Duration="0:0:0.15"/>
+                                                                        Storyboard.TargetProperty="RenderTransform.ScaleY" 
+                                                                        To="1.02" Duration="0:0:0.15"/>
+                                                        
+                                                        <DoubleAnimation Storyboard.TargetName="iconImage" 
+                                                                        Storyboard.TargetProperty="RenderTransform.ScaleX" 
+                                                                        To="1.15" Duration="0:0:0.15"/>
+                                                        <DoubleAnimation Storyboard.TargetName="iconImage" 
+                                                                        Storyboard.TargetProperty="RenderTransform.ScaleY" 
+                                                                        To="1.15" Duration="0:0:0.15"/>
+
+                                                        <DoubleAnimation Storyboard.TargetName="buttonText" 
+                                                                        Storyboard.TargetProperty="RenderTransform.ScaleX" 
+                                                                        To="1.05" Duration="0:0:0.15"/>
+                                                        <DoubleAnimation Storyboard.TargetName="buttonText" 
+                                                                        Storyboard.TargetProperty="RenderTransform.ScaleY" 
+                                                                        To="1.05" Duration="0:0:0.15"/>
                                                     </Storyboard>
                                                 </BeginStoryboard>
                                             </EventTrigger>
@@ -597,10 +820,24 @@
                                                                         Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" 
                                                                         To="#252538" Duration="0:0:0.2"/>
                                                         <DoubleAnimation Storyboard.TargetName="border" 
-                                                                        Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleX)" 
+                                                                        Storyboard.TargetProperty="RenderTransform.ScaleX" 
                                                                         To="1" Duration="0:0:0.2"/>
                                                         <DoubleAnimation Storyboard.TargetName="border" 
-                                                                        Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleY)" 
+                                                                        Storyboard.TargetProperty="RenderTransform.ScaleY" 
+                                                                        To="1" Duration="0:0:0.2"/>
+                                                        
+                                                        <DoubleAnimation Storyboard.TargetName="iconImage" 
+                                                                        Storyboard.TargetProperty="RenderTransform.ScaleX" 
+                                                                        To="1" Duration="0:0:0.2"/>
+                                                        <DoubleAnimation Storyboard.TargetName="iconImage" 
+                                                                        Storyboard.TargetProperty="RenderTransform.ScaleY" 
+                                                                        To="1" Duration="0:0:0.2"/>
+
+                                                        <DoubleAnimation Storyboard.TargetName="buttonText" 
+                                                                        Storyboard.TargetProperty="RenderTransform.ScaleX" 
+                                                                        To="1" Duration="0:0:0.2"/>
+                                                        <DoubleAnimation Storyboard.TargetName="buttonText" 
+                                                                        Storyboard.TargetProperty="RenderTransform.ScaleY" 
                                                                         To="1" Duration="0:0:0.2"/>
                                                     </Storyboard>
                                                 </BeginStoryboard>
@@ -616,7 +853,6 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="*"/>
-                        <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -625,23 +861,33 @@
 
                     <Button x:Name="BtnOpenPetCreator" Click="BtnOpenPetCreator_Click" 
                             Content="Create Smart Pet" 
+                            Tag="pack://application:,,,/Assets/Buttons/btn_create_SP.png"
                             Grid.Row="0" Grid.Column="0" 
-                            Style="{StaticResource AnimatedCreateButton}"/>
+                            Style="{StaticResource IconLeftButtonStyle}"/>
 
                     <Button x:Name="BtnEditPetCreator" Click="BtnEditPetCreator_Click" 
                             Content="Edit Smart Pet" 
+                            Tag="pack://application:,,,/Assets/Buttons/btn_edit_SP.png"
                             Grid.Row="0" Grid.Column="1" 
-                            Style="{StaticResource AnimatedCreateButton}"/>
+                            Style="{StaticResource IconLeftButtonStyle}"/>
 
                     <Button x:Name="BtnCreateGifPackage" Click="BtnCreateGifPackage_Click" 
                             Content="Create New GIF Package (.vpet)" 
+                            Tag="pack://application:,,,/Assets/Buttons/btn_create_GIFP.png"
                             Grid.Row="1" Grid.Column="0" 
-                            Style="{StaticResource AnimatedCreateButton}"/>
+                            Style="{StaticResource IconLeftButtonStyle}"/>
                             
                     <Button x:Name="BtnEditGifPackage" Click="BtnEditGifPackage_Click" 
                             Content="Edit GIF Package (.vpet)" 
+                            Tag="pack://application:,,,/Assets/Buttons/btn_edit_GIFP.png"
                             Grid.Row="1" Grid.Column="1" 
-                            Style="{StaticResource AnimatedCreateButton}"/>   
+                            Style="{StaticResource IconLeftButtonStyle}"/>   
+
+                    <Button x:Name="BtnOpenObjectCreator" Click="BtnOpenObjectCreator_Click" 
+                            Content="Create New Object" 
+                            Tag="pack://application:,,,/Assets/Buttons/btn_create_OBJ.png"
+                            Grid.Row="2" Grid.Column="0" 
+                            Style="{StaticResource IconLeftButtonStyle}"/> 
 
                     
                     <!-- <Button x:Name="BtnOpenFoodCreator" Click="BtnOpenFoodCreator_Click" 
@@ -650,8 +896,7 @@
                             Content="Edit Food File" Grid.Row="2" Grid.Column="1" Style="{StaticResource AnimatedCreatorButton}"/> -->
                             
 
-                    <Button x:Name="BtnOpenObjectCreator" Click="BtnOpenObjectCreator_Click" 
-                            Content="Create New Object" Grid.Row="2" Grid.Column="0" Style="{StaticResource AnimatedCreatorButton}"/>
+              
                     <!-- <Button x:Name="BtnEditObjectCreator" Click="BtnEditObjectCreator_Click" 
                             Content="Edit Object File" Grid.Row="3" Grid.Column="1" Style="{StaticResource AnimatedCreatorButton}"/> -->
                 
@@ -662,7 +907,6 @@
                 <Grid Margin="20">
                     <Grid.Resources>
                         <SolidColorBrush x:Key="ButtonBackground" Color="#1A1A24"/>
-                        
                         <Style TargetType="Button" x:Key="AnimatedToolButton">
                             <Setter Property="Background" Value="{StaticResource ButtonBackground}"/>
                             <Setter Property="Foreground" Value="White"/>
@@ -683,13 +927,24 @@
                                                 <ScaleTransform ScaleX="1" ScaleY="1"/>
                                             </Border.RenderTransform>
                                             
-                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20">
-                                                <TextBlock Text="{TemplateBinding Content}" 
-                                                           FontSize="22" FontWeight="Bold" 
-                                                           Foreground="{TemplateBinding Foreground}" 
-                                                           TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,10"/>
-                                                
-                                            </StackPanel>
+                                            <Viewbox Margin="15" Stretch="Uniform">
+                                                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+                                                    
+                                                    <Border Grid.Row="0" Width="64" Height="64" Background="Transparent" HorizontalAlignment="Center" Margin="0,0,0,10">
+                                                        <Image Source="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" 
+                                                            Width="64" Height="64" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+
+                                                    <TextBlock Grid.Row="1" Text="{TemplateBinding Content}" 
+                                                            FontSize="18" FontWeight="Bold" 
+                                                            Foreground="{TemplateBinding Foreground}" 
+                                                            TextWrapping="Wrap" TextAlignment="Center"/>
+                                                </Grid>
+                                            </Viewbox>
                                         </Border>
                                         
                                         <ControlTemplate.Triggers>
@@ -700,11 +955,11 @@
                                                                         Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" 
                                                                         To="#2C2C3A" Duration="0:0:0.15"/>
                                                         <DoubleAnimation Storyboard.TargetName="border" 
-                                                                         Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleX)" 
-                                                                         To="1.03" Duration="0:0:0.15"/>
+                                                                        Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleX)" 
+                                                                        To="1.03" Duration="0:0:0.15"/>
                                                         <DoubleAnimation Storyboard.TargetName="border" 
-                                                                         Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleY)" 
-                                                                         To="1.03" Duration="0:0:0.15"/>
+                                                                        Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleY)" 
+                                                                        To="1.03" Duration="0:0:0.15"/>
                                                     </Storyboard>
                                                 </BeginStoryboard>
                                             </EventTrigger>
@@ -715,11 +970,11 @@
                                                                         Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" 
                                                                         To="#1A1A24" Duration="0:0:0.2"/>
                                                         <DoubleAnimation Storyboard.TargetName="border" 
-                                                                         Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleX)" 
-                                                                         To="1" Duration="0:0:0.2"/>
+                                                                        Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleX)" 
+                                                                        To="1" Duration="0:0:0.2"/>
                                                         <DoubleAnimation Storyboard.TargetName="border" 
-                                                                         Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleY)" 
-                                                                         To="1" Duration="0:0:0.2"/>
+                                                                        Storyboard.TargetProperty="(Border.RenderTransform).(ScaleTransform.ScaleY)" 
+                                                                        To="1" Duration="0:0:0.2"/>
                                                     </Storyboard>
                                                 </BeginStoryboard>
                                             </EventTrigger>
@@ -740,10 +995,10 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <Button Grid.Row="0" Grid.Column="0" Content="GIF Creator" Click="BtnToolsGenerateGif_Click" Style="{StaticResource AnimatedToolButton}"/>
-                    <Button Grid.Row="0" Grid.Column="1" Content="Image Font Remover" Click="BtnLaunchBgRemover_Click" Style="{StaticResource AnimatedToolButton}"/>
-                    <Button Grid.Row="1" Grid.Column="0" Content="GIF Background Remover" Click="BtnLaunchGifRemover_Click" Style="{StaticResource AnimatedToolButton}"/>
-                    <Button Grid.Row="1" Grid.Column="1" Content="Sprite Sheet Cutter" Click="BtnLaunchSpriteExtractor_Click" Style="{StaticResource AnimatedToolButton}"/>
+                    <Button Grid.Row="0" Grid.Column="0" Content="GIF Creator" Tag="pack://application:,,,/Assets/Buttons/btn_GIF_Creator.png" Click="BtnToolsGenerateGif_Click" Style="{StaticResource AnimatedToolButton}"/>
+                    <Button Grid.Row="0" Grid.Column="1" Content="Image Font Remover" Tag="pack://application:,,,/Assets/Buttons/btn_ImageR.png" Click="BtnLaunchBgRemover_Click" Style="{StaticResource AnimatedToolButton}"/>
+                    <Button Grid.Row="1" Grid.Column="0" Content="GIF Background Remover" Tag="pack://application:,,,/Assets/Buttons/btn_GIF_BGR.png" Click="BtnLaunchGifRemover_Click" Style="{StaticResource AnimatedToolButton}"/>
+                    <Button Grid.Row="1" Grid.Column="1" Content="Sprite Sheet Cutter" Tag="pack://application:,,,/Assets/Buttons/btn_SpriteS.png" Click="BtnLaunchSpriteExtractor_Click" Style="{StaticResource AnimatedToolButton}"/>
                     <Button Grid.Row="2" Grid.Column="0" Content="Video Bg Remover" Click="BtnLaunchVideoBgRemover_Click" Style="{StaticResource AnimatedToolButton}"/>
                 </Grid>
             </TabItem>

@@ -163,5 +163,21 @@ namespace VirtualPeto
                 MessageBox.Show("Error loading package: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        private void SldVolume_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        {
+            if(sender is System.Windows.Controls.Slider slider)
+                {
+                    if(e.Delta > 0)
+                    {
+                        slider.Value += slider.SmallChange;
+                    }
+                    else
+                    {
+                        slider.Value -= slider.SmallChange;
+                    }
+                    e.Handled = true;
+                }
+        }
     }
+    
 }

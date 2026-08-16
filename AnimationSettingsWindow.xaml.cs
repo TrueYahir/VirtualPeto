@@ -29,6 +29,19 @@ namespace VirtualPeto
             _imagePath = imagePath;
             _previewTimer.Tick += PreviewTimer_Tick;
 
+            if (!_data.IsSpriteSheet)
+            {
+                TxtCols.IsEnabled = false;
+                TxtRows.IsEnabled = false;
+                TxtFrames.IsEnabled = false;
+            }
+            else
+            {
+                TxtCols.IsEnabled = true;
+                TxtRows.IsEnabled = true;
+                TxtFrames.IsEnabled = true;
+            }
+
             if (!string.IsNullOrEmpty(_imagePath) && File.Exists(_imagePath))
             {
                 _cachedImage = new BitmapImage();

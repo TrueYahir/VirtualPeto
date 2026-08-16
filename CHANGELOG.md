@@ -150,6 +150,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Planned
 - The next version will be the last update before the legacy version.
 
-## [2.2.6] - 2026-08-01
+## [2.3.0] - 2026-08-13
 ### Added
 - Video BG Remover added (Remove background of videos with a specific color)
+
+## [2.3.1] - 2026-08-14
+### Changed
+- Changed visual elements in the main window.
+- Optimized the way video-generated gifs play.
+- Added the option to create a GIF Package from the Video Background Remover window.
+- Added an option to size the pet when its running.
+- Now you can see the type of archive in the library section.
+
+### Added
+- Added a optión to refresh the values of general settings for Smart pet values for all the archives. 

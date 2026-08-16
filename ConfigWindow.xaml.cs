@@ -35,8 +35,20 @@ namespace VirtualPeto
     {
         public string Name { get; set; } = string.Empty;
         public string FullPath { get; set; } = string.Empty;
+        public string DisplayName => System.IO.Path.GetFileNameWithoutExtension(Name);
+        public string FileType
+        {
+            get
+            {
+                if(FullPath.Contains("Extracted_VPets") || FullPath.EndsWith(".vpet")) return "VPET";
+                if(IsVideo) return "VID";
+                string ext = System.IO.Path.GetExtension(FullPath).ToUpper().Replace(".", "");
+                return string.IsNullOrEmpty(ext) ? "UNKNOWN" : ext;
+            }
+        }
         public BitmapImage? Thumbnail { get; set; }
         public bool IsVideo { get; set; }
+        
 
         public Visibility ImageIconVisibility => IsVideo ? Visibility.Collapsed : Visibility.Visible;
         public Visibility VideoIconVisibility => IsVideo ? Visibility.Visible : Visibility.Collapsed;
@@ -329,6 +341,37 @@ namespace VirtualPeto
                 CopyDirectory(subDir.FullName, Path.Combine(destination, subDir.Name));
             }
         }
+        private void SldSize_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            int size = (int)e.NewValue;
+            if (TxtSizeLabel != null) 
+            {
+                TxtSizeLabel.Text = $"Size (Pixels): ({size}x{size})";
+            }
+            
+            if (LstLibrary.SelectedItem is LibraryItem selected && selected.IsActive)
+            {
+                string libraryKey = NormalizePath(selected.FullPath);
+                if (activeLibraryWindows.TryGetValue(libraryKey, out MainWindow? openWindow))
+                {
+                    if (openWindow != null)
+                    {
+                        openWindow.Width = size;
+                        openWindow.Height = size;
+                    }
+                }
+            }
+        }
+
+        private void SldSize_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (sender is Slider slider)
+            {
+                slider.Value += e.Delta > 0 ? 5 : -5;
+                e.Handled = true; 
+            }
+        }
+        
 
         // === LIBRARY LOGIC ===
 
@@ -581,8 +624,73 @@ namespace VirtualPeto
             VidLibraryPreview.Play();
         }
 
-        private void BtnIncreaseFps_Click(object sender, RoutedEventArgs e) { if (int.TryParse(TxtFps.Text, out int current) && current < 60) TxtFps.Text = (current + 1).ToString(); }
-        private void BtnDecreaseFps_Click(object sender, RoutedEventArgs e) { if (int.TryParse(TxtFps.Text, out int current) && current > 1) TxtFps.Text = (current - 1).ToString(); }
+        private void BtnIncreaseFps_Click(object sender, RoutedEventArgs e) 
+        { 
+            if (int.TryParse(TxtFps.Text, out int current) && current < 60) 
+            {
+                int newFps = current + 1;
+                TxtFps.Text = newFps.ToString(); 
+                UpdateActivePetFps(newFps); 
+            }
+        }
+
+        private void BtnDecreaseFps_Click(object sender, RoutedEventArgs e) 
+        { 
+            if (int.TryParse(TxtFps.Text, out int current) && current > 1) 
+            {
+                int newFps = current - 1;
+                TxtFps.Text = newFps.ToString(); 
+                UpdateActivePetFps(newFps); 
+            }
+        }
+        private void UpdateActivePetFps(int fps)
+        {
+            if (LstLibrary.SelectedItem is LibraryItem selected && selected.IsActive && !selected.IsVideo && selected.FullPath.ToLower().EndsWith(".gif"))
+            {
+                string libraryKey = NormalizePath(selected.FullPath);
+                if (activeLibraryWindows.TryGetValue(libraryKey, out MainWindow? openWindow))
+                {
+                    if (openWindow != null)
+                    {
+                        var controller = ImageBehavior.GetAnimationController(openWindow.PetImage);
+                        if (controller != null && fps > 0)
+                        {
+                            ImageBehavior.SetAnimationDuration(openWindow.PetImage, new Duration(TimeSpan.FromMilliseconds((1000.0 / fps) * controller.FrameCount)));
+                        }
+                    }
+                }
+            }
+        }
+
+        private void SldVolume_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            int volumePercentage = (int)e.NewValue;
+            
+            if (TxtVolumeLabel != null) 
+            {
+                TxtVolumeLabel.Text = $"Volume: {volumePercentage}%";
+            }
+            
+            if (LstLibrary.SelectedItem is LibraryItem selected && selected.IsActive)
+            {
+                string libraryKey = NormalizePath(selected.FullPath);
+                if (activeLibraryWindows.TryGetValue(libraryKey, out MainWindow? openWindow))
+                {
+                    if (openWindow?.PetVideo != null) 
+                    {
+                        openWindow.PetVideo.Volume = volumePercentage / 100.0;
+                    }
+                }
+            }
+        }
+        private void SldVolume_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (sender is Slider slider)
+            {
+                slider.Value += e.Delta > 0 ? 5 : -5;
+                e.Handled = true; 
+            }
+        }
 
         private void BtnDeleteLibrary_Click(object sender, RoutedEventArgs e)
         {

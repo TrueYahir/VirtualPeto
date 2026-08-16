@@ -3,41 +3,99 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:VirtualPeto"
         Title="SmartPetWindow" Height="150" Width="150">
+    
     <local:PetWindowBase.Resources>
+        
         <Style TargetType="ContextMenu">
-            <Setter Property="Background" Value="#1A1A24"/>
-            <Setter Property="BorderBrush" Value="#3A3A4A"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="4"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContextMenu">
+                        <Border Background="#1A1A24" BorderBrush="#3A3A4A" BorderThickness="1" CornerRadius="4" Padding="2">
+                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
+        
         <Style TargetType="MenuItem">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,6"/>
-            <Setter Property="Margin" Value="0,1,0,1"/>
+            <Setter Property="Padding" Value="10,8"/>
             <Setter Property="FontSize" Value="13"/>
-            <Style.Triggers>
-                <Trigger Property="IsHighlighted" Value="True">
-                    <Setter Property="Background" Value="#2C2C3A"/>
-                    <Setter Property="Foreground" Value="White"/>
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="2">
+                            <Grid Margin="{TemplateBinding Padding}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="24"/> 
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <ContentPresenter x:Name="Icon" Content="{TemplateBinding Icon}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <ContentPresenter Grid.Column="1" ContentSource="Header" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="8,0,15,0"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#2C2C3A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </local:PetWindowBase.Resources>
+
     <local:PetWindowBase.ContextMenu>
         <ContextMenu x:Name="PetContextMenu" Opened="PetContextMenu_Opened">
-            <MenuItem Header="Close Pet" Click="MenuClosePet_Click"/>
-            <MenuItem x:Name="MenuPinPet" Header="Pin Pet" Click="MenuPinPet_Click"/>
-            <MenuItem x:Name="MenuFollowMouse" Header="Follow Mouse" Click="MenuFollowMouse_Click"/>
-            <Separator/>
-            <MenuItem Header="Generate Food" Click="MenuGenerateFood_Click"/>
-            <MenuItem Header="Generate Toy" Click="MenuGenerateToy_Click"/>
+            
+            <MenuItem Header="Close Pet" Click="MenuClosePet_Click">
+                <MenuItem.Icon>
+                    <Image Source="pack://application:,,,/Assets/Buttons/btn_close.png" Width="14" Height="14" Stretch="Uniform" Opacity="0.8"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            
+            <MenuItem x:Name="MenuPinPet" Header="Pin Pet" Click="MenuPinPet_Click">
+                <MenuItem.Icon>
+                    <Image Source="pack://application:,,,/Assets/Buttons/btn_pin.png" Width="14" Height="14" Stretch="Uniform" Opacity="0.8"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            
+            <MenuItem x:Name="MenuFollowMouse" Header="Follow Mouse" Click="MenuFollowMouse_Click">
+                <MenuItem.Icon>
+                    <Image Source="pack://application:,,,/Assets/Buttons/btn_cursor.png" Width="14" Height="14" Stretch="Uniform" Opacity="0.8"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            
+            <MenuItem Height="1" Margin="30,4,10,4" IsEnabled="False">
+                <MenuItem.Template>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Rectangle Fill="#3A3A4A"/>
+                    </ControlTemplate>
+                </MenuItem.Template>
+            </MenuItem>
+            
+            <MenuItem Header="Generate Food" Click="MenuGenerateFood_Click">
+                <MenuItem.Icon>
+                    <Image Source="pack://application:,,,/Assets/Buttons/btn_food.png" Width="14" Height="14" Stretch="Uniform" Opacity="0.8"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            
+            <MenuItem Header="Generate Toy" Click="MenuGenerateToy_Click">
+                <MenuItem.Icon>
+                    <Image Source="pack://application:,,,/Assets/Buttons/btn_game.png" Width="14" Height="14" Stretch="Uniform" Opacity="0.8"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            
         </ContextMenu>
     </local:PetWindowBase.ContextMenu>
+
     <Grid>
-        <Image x:Name="PetSprite" 
-               Stretch="None" 
-               RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+        <Image x:Name="PetSprite" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
     </Grid>
 </local:PetWindowBase>

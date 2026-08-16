@@ -29,6 +29,9 @@
     <Resource Include="Assets\discord_logo_icon.png" />
   </ItemGroup>
 
+<ItemGroup>
+  <Resource Include="Assets\Buttons\*.png" />
+</ItemGroup>
   <PropertyGroup>
       <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
   </PropertyGroup>

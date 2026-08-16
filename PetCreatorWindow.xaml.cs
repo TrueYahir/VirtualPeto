@@ -42,9 +42,10 @@ namespace VirtualPeto
                 PanelSpriteSettings.Visibility = Visibility.Visible;
                 PanelFpsSettings.Visibility = Visibility.Visible;
             }
-            else if (selected == "GIF")
+            else if (selected == "GIF / MP4" || selected == "Mixed")
             {
                 PanelFpsSettings.Visibility = Visibility.Visible;
+                PanelSpriteSettings.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -171,16 +172,42 @@ namespace VirtualPeto
 
         private void BtnBrowse_Click(object sender, RoutedEventArgs e)
         {
+            string selectedFormat = (CmbFormat.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+            string fileFilter = "Media Files (*.gif;*.png;*.jpg;*.jpeg;*.mp4)|*.gif;*.png;*.jpg;*.jpeg;*.mp4|All files (*.*)|*.*";
+
+            if (selectedFormat == "Sprite Sheet")
+            {
+                fileFilter = "Image Files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg";
+            }
+            else if (selectedFormat == "GIF / MP4")
+            {
+                fileFilter = "Animated Files (*.gif;*.mp4)|*.gif;*.mp4";
+            }
+
             if (sender is Button btn && btn.Tag is string tag)
             {
                 OpenFileDialog ofd = new OpenFileDialog
                 {
                     Title = $"Select animation for: {tag}",
-                    Filter = "Media Files (*.gif;*.png;*.mp4)|*.gif;*.png;*.mp4|All files (*.*)|*.*"
+                    Filter = fileFilter
                 };
 
                 if (ofd.ShowDialog() == true)
                 {
+                    string extension = System.IO.Path.GetExtension(ofd.FileName).ToLower();
+
+                    if (selectedFormat == "Sprite Sheet" && (extension == ".gif" || extension == ".mp4"))
+                    {
+                        MessageBox.Show("Invalid file. For 'Sprite Sheet', you must select a static image.", "Invalid Format", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    if (selectedFormat == "GIF / MP4" && (extension == ".png" || extension == ".jpg" || extension == ".jpeg"))
+                    {
+                        MessageBox.Show("Invalid file. You selected GIF/MP4 but chose a static image.", "Invalid Format", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
                     if (tag.StartsWith("Walk_") || tag.StartsWith("Run_"))
                     {
                         if (!metadata.Movements.ContainsKey(tag))
@@ -201,7 +228,6 @@ namespace VirtualPeto
                         case "Listening": TxtListeningPath.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.ListeningAnimation, ofd.FileName, false); break;
                         case "Notification": TxtNotificationPath.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.NotificationAnimation, ofd.FileName, false); break;
                         
-
                         case "Walk_Up": TxtWalkUp.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Walk_Up"], ofd.FileName, false); break;
                         case "Walk_Down": TxtWalkDown.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Walk_Down"], ofd.FileName, false); break;
                         case "Walk_Left": TxtWalkLeft.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Walk_Left"], ofd.FileName, false); break;
@@ -228,8 +254,23 @@ namespace VirtualPeto
         {
             anim.FilePath = filePath;
             
-            string formatoSeleccionado = (CmbFormat.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
-            if (formatoSeleccionado != "Sprite Sheet") return;
+            string selectedFormat = (CmbFormat.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+            string fileExtension = System.IO.Path.GetExtension(filePath).ToLower();
+            
+            bool isIndividualSpriteSheet = false;
+
+            if (selectedFormat == "Sprite Sheet") 
+            {
+                isIndividualSpriteSheet = true;
+            }
+            else if (selectedFormat == "Mixed" && fileExtension == ".png") 
+            {
+                isIndividualSpriteSheet = true;
+            }
+
+            anim.IsSpriteSheet = isIndividualSpriteSheet;
+
+            if (!isIndividualSpriteSheet) return;
 
             int.TryParse(TxtFrameWidth.Text, out int baseW);
             int.TryParse(TxtFrameHeight.Text, out int baseH);
@@ -255,7 +296,6 @@ namespace VirtualPeto
                 if (rows <= 0) rows = 1;
                 int totalFrames = cols * rows;
 
-                anim.IsSpriteSheet = true;
                 anim.FrameWidth = baseW;
                 anim.FrameHeight = baseH;
                 anim.Columns = cols;
@@ -263,7 +303,6 @@ namespace VirtualPeto
                 
                 if(anim.TotalFrames <= 1) anim.TotalFrames = totalFrames;
 
-                //anim.TotalFrames = totalFrames;
                 int.TryParse(TxtFps.Text, out int fps);
                 anim.Fps = fps > 0 ? fps : 10;
 
@@ -285,19 +324,43 @@ namespace VirtualPeto
             RandomActionsList.Add(new RandomAction 
             { 
                 ActionName = "New Action", 
-                Probability = 0.1, 
+                Probability = 10, 
                 Animation = new AnimationData() 
             });
+        }
+        private void BtnDeleteRandomAction_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.DataContext is RandomAction action)
+            {
+                MessageBoxResult result = MessageBox.Show($"¿Estás seguro de que deseas eliminar la acción '{action.ActionName}' por completo?", "Confirmar Eliminación", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                
+                if (result == MessageBoxResult.Yes)
+                {
+                    RandomActionsList.Remove(action);
+                }
+            }
         }
 
         private void BtnBrowseRandomAction_Click(object sender, RoutedEventArgs e)
         {
+            string selectedFormat = (CmbFormat.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+            string fileFilter = "Media Files (*.gif;*.png;*.jpg;*.jpeg;*.mp4)|*.gif;*.png;*.jpg;*.jpeg;*.mp4|All files (*.*)|*.*";
+
+            if (selectedFormat == "Sprite Sheet")
+            {
+                fileFilter = "Image Files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg";
+            }
+            else if (selectedFormat == "GIF / MP4")
+            {
+                fileFilter = "Animated Files (*.gif;*.mp4)|*.gif;*.mp4";
+            }
+
             if ((sender as Button)?.DataContext is RandomAction action)
             {
                 OpenFileDialog ofd = new OpenFileDialog
                 {
                     Title = "Select animation for random action",
-                    Filter = "Media Files (*.gif;*.png;*.mp4)|*.gif;*.png;*.mp4|All files (*.*)|*.*"
+                    Filter = fileFilter
                 };
 
                 if (ofd.ShowDialog() == true)
@@ -306,6 +369,63 @@ namespace VirtualPeto
                     LvwRandomActions.Items.Refresh();
                 }
             }
+        }
+        private void BtnApplyGlobalSettings_Click(object sender, RoutedEventArgs e)
+        {
+            int.TryParse(TxtFrameWidth.Text, out int globalWidth);
+            int.TryParse(TxtFrameHeight.Text, out int globalHeight);
+            int.TryParse(TxtColumns.Text, out int globalColumns);
+            int.TryParse(TxtRows.Text, out int globalRows);
+            int.TryParse(TxtTotalFrames.Text, out int globalFrames);
+            int.TryParse(TxtFps.Text, out int globalFps);
+
+            if (globalWidth <= 0) globalWidth = 64;
+            if (globalHeight <= 0) globalHeight = 64;
+            if (globalColumns <= 0) globalColumns = 1;
+            if (globalRows <= 0) globalRows = 1;
+            if (globalFrames <= 0) globalFrames = 1;
+            if (globalFps <= 0) globalFps = 10;
+
+            Action<AnimationData> applyToAnimation = (anim) =>
+            {
+                if (anim == null) return;
+                anim.FrameWidth = globalWidth;
+                anim.FrameHeight = globalHeight;
+                anim.Columns = globalColumns;
+                anim.Rows = globalRows;
+                anim.TotalFrames = globalFrames;
+                anim.Fps = globalFps;
+            };
+
+            applyToAnimation(metadata.IdleAnimation);
+            applyToAnimation(metadata.SleepAnimation);
+            applyToAnimation(metadata.WakeUpAnimation);
+            applyToAnimation(metadata.IntroAnimation);
+            applyToAnimation(metadata.OutroAnimation);
+            applyToAnimation(metadata.ClickedAnimation);
+            applyToAnimation(metadata.DraggedAnimation);
+            applyToAnimation(metadata.ListeningAnimation);
+            applyToAnimation(metadata.NotificationAnimation);
+
+            if (metadata.Movements != null)
+            {
+                foreach (var kvp in metadata.Movements)
+                {
+                    applyToAnimation(kvp.Value);
+                }
+            }
+
+            if (RandomActionsList != null)
+            {
+                foreach (var randomAction in RandomActionsList)
+                {
+                    if (randomAction.Animation != null)
+                    {
+                        applyToAnimation(randomAction.Animation);
+                    }
+                }
+            }
+            LvwRandomActions.Items.Refresh();
         }
 
         private void BtnCompile_Click(object sender, RoutedEventArgs e)
@@ -396,6 +516,55 @@ namespace VirtualPeto
                 {
                     MessageBox.Show($"An error occurred while compiling the pet:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
+            }
+        }
+        private void BtnClear_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string tag)
+            {
+                MessageBoxResult result = MessageBox.Show($"¿Estás seguro de que deseas borrar la animación de '{tag}'?", "Confirmar Acción", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                
+                if (result == MessageBoxResult.Yes)
+                {
+                    switch (tag)
+                    {
+                        case "Idle": TxtIdlePath.Text = ""; metadata.IdleAnimation = new AnimationData(); break;
+                        case "Sleep": TxtSleepPath.Text = ""; metadata.SleepAnimation = new AnimationData(); break;
+                        case "Intro": TxtIntroPath.Text = ""; metadata.IntroAnimation = new AnimationData(); break;
+                        case "Outro": TxtOutroPath.Text = ""; metadata.OutroAnimation = new AnimationData(); break;
+                        case "WakeUp": TxtWakeUpPath.Text = ""; metadata.WakeUpAnimation = new AnimationData(); break;
+                        case "Clicked": TxtClickedPath.Text = ""; metadata.ClickedAnimation = new AnimationData(); break;
+                        case "Dragged": TxtDraggedPath.Text = ""; metadata.DraggedAnimation = new AnimationData(); break;
+                        case "Listening": TxtListeningPath.Text = ""; metadata.ListeningAnimation = new AnimationData(); break;
+                        case "Notification": TxtNotificationPath.Text = ""; metadata.NotificationAnimation = new AnimationData(); break;
+                        
+                        case "Walk_Up": TxtWalkUp.Text = ""; metadata.Movements["Walk_Up"] = new AnimationData(); break;
+                        case "Walk_Down": TxtWalkDown.Text = ""; metadata.Movements["Walk_Down"] = new AnimationData(); break;
+                        case "Walk_Left": TxtWalkLeft.Text = ""; metadata.Movements["Walk_Left"] = new AnimationData(); break;
+                        case "Walk_Right": TxtWalkRight.Text = ""; metadata.Movements["Walk_Right"] = new AnimationData(); break;
+                        case "Walk_UpLeft": TxtWalkUpLeft.Text = ""; metadata.Movements["Walk_UpLeft"] = new AnimationData(); break;
+                        case "Walk_UpRight": TxtWalkUpRight.Text = ""; metadata.Movements["Walk_UpRight"] = new AnimationData(); break;
+                        case "Walk_DownLeft": TxtWalkDownLeft.Text = ""; metadata.Movements["Walk_DownLeft"] = new AnimationData(); break;
+                        case "Walk_DownRight": TxtWalkDownRight.Text = ""; metadata.Movements["Walk_DownRight"] = new AnimationData(); break;
+                        
+                        case "Run_Up": TxtRunUp.Text = ""; metadata.Movements["Run_Up"] = new AnimationData(); break;
+                        case "Run_Down": TxtRunDown.Text = ""; metadata.Movements["Run_Down"] = new AnimationData(); break;
+                        case "Run_Left": TxtRunLeft.Text = ""; metadata.Movements["Run_Left"] = new AnimationData(); break;
+                        case "Run_Right": TxtRunRight.Text = ""; metadata.Movements["Run_Right"] = new AnimationData(); break;
+                        case "Run_UpLeft": TxtRunUpLeft.Text = ""; metadata.Movements["Run_UpLeft"] = new AnimationData(); break;
+                        case "Run_UpRight": TxtRunUpRight.Text = ""; metadata.Movements["Run_UpRight"] = new AnimationData(); break;
+                        case "Run_DownLeft": TxtRunDownLeft.Text = ""; metadata.Movements["Run_DownLeft"] = new AnimationData(); break;
+                        case "Run_DownRight": TxtRunDownRight.Text = ""; metadata.Movements["Run_DownRight"] = new AnimationData(); break;
+                    }
+                }
+            }
+        }
+        private void BtnClearRandomAction_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.DataContext is RandomAction action)
+            {
+                action.Animation = new AnimationData();
+                LvwRandomActions.Items.Refresh();
             }
         }
 
