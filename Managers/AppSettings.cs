@@ -13,5 +13,6 @@ namespace VirtualPeto
         public int DesktopPetLimit { get; set; } = 5;
         public int SleepTimeMinutes { get; set; } = 15;
         public bool StartFavoritesOnStartup { get; set; } = false;
+        public string DefaultSaveFolder{get; set;} = string.Empty;
     }
 }

@@ -164,3 +164,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Added a optión to refresh the values of general settings for Smart pet values for all the archives. 
+- Sprite Extractor 
+- Audio Converter

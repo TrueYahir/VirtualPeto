@@ -284,6 +284,10 @@ namespace VirtualPeto
             
             TxtPetLimit.Text = SettingsManager.Current.DesktopPetLimit.ToString();
             TxtSleepTime.Text = SettingsManager.Current.SleepTimeMinutes.ToString();
+            if (TxtDefaultFolder != null && !string.IsNullOrEmpty(SettingsManager.Current.DefaultSaveFolder))
+            {
+                TxtDefaultFolder.Text = SettingsManager.Current.DefaultSaveFolder;
+            }
         }
         protected override void OnClosing(CancelEventArgs e)
         {
@@ -551,6 +555,7 @@ namespace VirtualPeto
 
                 if (LstLibrary.SelectedItem == null || !(LstLibrary.SelectedItem is LibraryItem selected))
                 {
+                    if(LibraryActionButtonsPanel != null) LibraryActionButtonsPanel.Visibility = Visibility.Collapsed;
                     TxtSelectedLibraryName.Text = "None selected";
                     ImageBehavior.SetAnimatedSource(ImgLibraryPreview, null);
                     ImgLibraryPreview.Source = null;
@@ -563,7 +568,7 @@ namespace VirtualPeto
                     if (PnlAudio != null) PnlAudio.Visibility = Visibility.Collapsed;
                     return;
                 }
-
+                if(LibraryActionButtonsPanel != null) LibraryActionButtonsPanel.Visibility = Visibility.Visible;
                 TxtEmptyLibraryPreview.Visibility = Visibility.Collapsed;
                 PnlSize.Visibility = Visibility.Visible;
                 TxtSelectedLibraryName.Text = selected.Name;
@@ -615,6 +620,22 @@ namespace VirtualPeto
                 PnlSize.Visibility = Visibility.Collapsed;
                 PnlFps.Visibility = Visibility.Collapsed;
                 if (PnlAudio != null) PnlAudio.Visibility = Visibility.Collapsed;
+            }
+        }
+        private void List_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ActionButtonsPanel != null)
+            {
+                var lista = sender as System.Windows.Controls.ListBox;
+
+                if (lista?.SelectedItem == null)
+                {
+                    ActionButtonsPanel.Visibility = Visibility.Collapsed;
+                }
+                else
+                {
+                    ActionButtonsPanel.Visibility = Visibility.Visible;
+                }
             }
         }
 
@@ -1094,8 +1115,12 @@ namespace VirtualPeto
             try 
             {
                 _previewAnimTimer.Stop();
+                if (ActionButtonsPanel != null)
+                {
+                    ActionButtonsPanel.Visibility = LstPets.SelectedItem == null ? Visibility.Collapsed : Visibility.Visible;
+                }
 
-                if (LstPets.SelectedItem == null || !(LstPets.SelectedItem is PetItem selected))
+                if (LstPets.SelectedItem == null || !(LstPets.SelectedItem is PetItem))
                 {
                     TxtSelectedPetName.Text = "None selected";
                     ImageBehavior.SetAnimatedSource(ImgPetPreview, null);
@@ -1104,6 +1129,7 @@ namespace VirtualPeto
                     TxtEmptyPetPreview.Text = "Select a pet to preview";
                     return;
                 }
+                PetItem selected = (PetItem)LstPets.SelectedItem;
 
                 TxtEmptyPetPreview.Visibility = Visibility.Collapsed;
                 TxtSelectedPetName.Text = selected.Name; 
@@ -1539,6 +1565,20 @@ namespace VirtualPeto
                 LoadLibrary(); 
             }
         }
+        private void BtnLaunchAudioConverter_Click(object sender, RoutedEventArgs e)
+        {
+            VirtualPeto.Tools.AudioConverterWindow audioWindow = new VirtualPeto.Tools.AudioConverterWindow();
+            audioWindow.Owner = this;
+            audioWindow.ShowDialog();
+        }
+        private void BtnLaunchFrameExtractor_Click(object sender, RoutedEventArgs e)
+        {
+            
+            VirtualPeto.Tools.FrameExtractorWindow extractorWindow = new VirtualPeto.Tools.FrameExtractorWindow();
+            extractorWindow.Owner = this;
+            extractorWindow.ShowDialog();
+            
+        }
 
         // === SETTINGS ===
         private void ChkAutoClearCache_Checked(object sender, RoutedEventArgs e) => autoClearCache = true;
@@ -1838,6 +1878,20 @@ namespace VirtualPeto
                     }
 
                     petWindow.Visibility = hidePets ? Visibility.Hidden : Visibility.Visible;
+                }
+            }
+        }
+        private void BtnBrowseFolder_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                dialog.Description = "Select the default folder to save files";
+                dialog.UseDescriptionForTitle = true;
+                if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    TxtDefaultFolder.Text = dialog.SelectedPath;
+                    SettingsManager.Current.DefaultSaveFolder = dialog.SelectedPath;
+                    SettingsManager.Save();
                 }
             }
         }
