@@ -53,7 +53,10 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBox x:Name="TxtAudio" Background="#252538" Foreground="White" CaretBrush="White" Padding="4" IsReadOnly="True" Margin="0,0,5,0"/>
-                <Button Grid.Column="1" Content="Browse" Click="BtnBrowseAudio_Click" Background="#4A90E2" Foreground="White" Padding="10,0" BorderThickness="0"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="Browse" Click="BtnBrowseAudio_Click" Background="#4A90E2" Foreground="White" Padding="10,0" BorderThickness="0" Margin="0,0,5,0"/>
+                    <Button Content="Clear" Click="BtnClearAudio_Click" Background="#E24A4A" Foreground="White" Padding="10,0" BorderThickness="0"/>
+                </StackPanel>
             </Grid>
 
             <UniformGrid Columns="2">

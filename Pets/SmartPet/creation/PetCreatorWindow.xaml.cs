@@ -89,17 +89,24 @@ namespace VirtualPeto
                                 if (metadata.WakeUpAnimation == null) metadata.WakeUpAnimation = new AnimationData();
                                 if (metadata.ListeningAnimation == null) metadata.ListeningAnimation = new AnimationData();
                                 if (metadata.NotificationAnimation == null) metadata.NotificationAnimation = new AnimationData();
+                                if (metadata.MusicAnimation == null) metadata.MusicAnimation = new AnimationData();
+                                if (metadata.FoodAnimation == null) metadata.FoodAnimation = new AnimationData();
+                                if (metadata.FoodGrabbedAnimation == null) metadata.FoodGrabbedAnimation = new AnimationData();
+                                if (metadata.EatingFoodAnimation == null) metadata.EatingFoodAnimation = new AnimationData();
+                                if (metadata.ItemAnimation == null) metadata.ItemAnimation = new AnimationData();
+                                if (metadata.ItemGrabbedAnimation == null) metadata.ItemGrabbedAnimation = new AnimationData();
+                                if (metadata.UsingItemAnimation == null) metadata.UsingItemAnimation = new AnimationData();
 
-                                string[] llavesMovimientos = { 
+                                string[] movementKeys = { 
                                     "Walk_Up", "Walk_Down", "Walk_Left", "Walk_Right", "Walk_UpLeft", "Walk_UpRight", "Walk_DownLeft", "Walk_DownRight", 
                                     "Run_Up", "Run_Down", "Run_Left", "Run_Right", "Run_UpLeft", "Run_UpRight", "Run_DownLeft", "Run_DownRight" 
                                 };
                                 
-                                foreach (string llave in llavesMovimientos)
+                                foreach (string key in movementKeys)
                                 {
-                                    if (!metadata.Movements.ContainsKey(llave))
+                                    if (!metadata.Movements.ContainsKey(key))
                                     {
-                                        metadata.Movements[llave] = new AnimationData { FilePath = "" };
+                                        metadata.Movements[key] = new AnimationData { FilePath = "" };
                                     }
                                 }
                                 
@@ -133,7 +140,15 @@ namespace VirtualPeto
                                 TxtDraggedPath.Text = metadata.DraggedAnimation.FilePath;
                                 TxtListeningPath.Text = metadata.ListeningAnimation.FilePath;
                                 TxtNotificationPath.Text = metadata.NotificationAnimation.FilePath;
+                                TxtMusicPath.Text = metadata.MusicAnimation.FilePath;
                                 TxtWakeUpPath.Text = metadata.WakeUpAnimation.FilePath;
+
+                                TxtFoodPath.Text = metadata.FoodAnimation.FilePath;
+                                TxtFoodGrabbedPath.Text = metadata.FoodGrabbedAnimation.FilePath;
+                                TxtEatingFoodPath.Text = metadata.EatingFoodAnimation.FilePath;
+                                TxtItemPath.Text = metadata.ItemAnimation.FilePath;
+                                TxtItemGrabbedPath.Text = metadata.ItemGrabbedAnimation.FilePath;
+                                TxtUsingItemPath.Text = metadata.UsingItemAnimation.FilePath;
 
                                 TxtFrameWidth.Text = metadata.IdleAnimation.FrameWidth.ToString();
                                 TxtFrameHeight.Text = metadata.IdleAnimation.FrameHeight.ToString();
@@ -218,39 +233,46 @@ namespace VirtualPeto
 
                     switch (tag)
                     {
-                        case "Idle": TxtIdlePath.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.IdleAnimation, ofd.FileName, true); break;
-                        case "Sleep": TxtSleepPath.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.SleepAnimation, ofd.FileName, false); break;
-                        case "Intro": TxtIntroPath.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.IntroAnimation, ofd.FileName, false); break;
-                        case "Outro": TxtOutroPath.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.OutroAnimation, ofd.FileName, false); break;
-                        case "WakeUp": TxtWakeUpPath.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.WakeUpAnimation, ofd.FileName, false); break;
-                        case "Clicked": TxtClickedPath.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.ClickedAnimation, ofd.FileName, false); break;
-                        case "Dragged": TxtDraggedPath.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.DraggedAnimation, ofd.FileName, false); break;
-                        case "Listening": TxtListeningPath.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.ListeningAnimation, ofd.FileName, false); break;
-                        case "Notification": TxtNotificationPath.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.NotificationAnimation, ofd.FileName, false); break;
+                        case "Idle": TxtIdlePath.Text = ofd.FileName; AutoCalculateForAnimation(metadata.IdleAnimation, ofd.FileName, true); break;
+                        case "Sleep": TxtSleepPath.Text = ofd.FileName; AutoCalculateForAnimation(metadata.SleepAnimation, ofd.FileName, false); break;
+                        case "Intro": TxtIntroPath.Text = ofd.FileName; AutoCalculateForAnimation(metadata.IntroAnimation, ofd.FileName, false); break;
+                        case "Outro": TxtOutroPath.Text = ofd.FileName; AutoCalculateForAnimation(metadata.OutroAnimation, ofd.FileName, false); break;
+                        case "WakeUp": TxtWakeUpPath.Text = ofd.FileName; AutoCalculateForAnimation(metadata.WakeUpAnimation, ofd.FileName, false); break;
+                        case "Clicked": TxtClickedPath.Text = ofd.FileName; AutoCalculateForAnimation(metadata.ClickedAnimation, ofd.FileName, false); break;
+                        case "Dragged": TxtDraggedPath.Text = ofd.FileName; AutoCalculateForAnimation(metadata.DraggedAnimation, ofd.FileName, false); break;
+                        case "Listening": TxtListeningPath.Text = ofd.FileName; AutoCalculateForAnimation(metadata.ListeningAnimation, ofd.FileName, false); break;
+                        case "Notification": TxtNotificationPath.Text = ofd.FileName; AutoCalculateForAnimation(metadata.NotificationAnimation, ofd.FileName, false); break;
+                        case "Music": TxtMusicPath.Text = ofd.FileName; AutoCalculateForAnimation(metadata.MusicAnimation, ofd.FileName, false); break;
+                        case "Food": TxtFoodPath.Text = ofd.FileName; AutoCalculateForAnimation(metadata.FoodAnimation, ofd.FileName, false); break;
+                        case "FoodGrabbed": TxtFoodGrabbedPath.Text = ofd.FileName; AutoCalculateForAnimation(metadata.FoodGrabbedAnimation, ofd.FileName, false); break;
+                        case "EatingFood": TxtEatingFoodPath.Text = ofd.FileName; AutoCalculateForAnimation(metadata.EatingFoodAnimation, ofd.FileName, false); break;
+                        case "Item": TxtItemPath.Text = ofd.FileName; AutoCalculateForAnimation(metadata.ItemAnimation, ofd.FileName, false); break;
+                        case "ItemGrabbed": TxtItemGrabbedPath.Text = ofd.FileName; AutoCalculateForAnimation(metadata.ItemGrabbedAnimation, ofd.FileName, false); break;
+                        case "UsingItem": TxtUsingItemPath.Text = ofd.FileName; AutoCalculateForAnimation(metadata.UsingItemAnimation, ofd.FileName, false); break;
                         
-                        case "Walk_Up": TxtWalkUp.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Walk_Up"], ofd.FileName, false); break;
-                        case "Walk_Down": TxtWalkDown.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Walk_Down"], ofd.FileName, false); break;
-                        case "Walk_Left": TxtWalkLeft.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Walk_Left"], ofd.FileName, false); break;
-                        case "Walk_Right": TxtWalkRight.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Walk_Right"], ofd.FileName, false); break;
-                        case "Walk_UpLeft": TxtWalkUpLeft.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Walk_UpLeft"], ofd.FileName, false); break;
-                        case "Walk_UpRight": TxtWalkUpRight.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Walk_UpRight"], ofd.FileName, false); break;
-                        case "Walk_DownLeft": TxtWalkDownLeft.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Walk_DownLeft"], ofd.FileName, false); break;
-                        case "Walk_DownRight": TxtWalkDownRight.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Walk_DownRight"], ofd.FileName, false); break;
+                        case "Walk_Up": TxtWalkUp.Text = ofd.FileName; AutoCalculateForAnimation(metadata.Movements["Walk_Up"], ofd.FileName, false); break;
+                        case "Walk_Down": TxtWalkDown.Text = ofd.FileName; AutoCalculateForAnimation(metadata.Movements["Walk_Down"], ofd.FileName, false); break;
+                        case "Walk_Left": TxtWalkLeft.Text = ofd.FileName; AutoCalculateForAnimation(metadata.Movements["Walk_Left"], ofd.FileName, false); break;
+                        case "Walk_Right": TxtWalkRight.Text = ofd.FileName; AutoCalculateForAnimation(metadata.Movements["Walk_Right"], ofd.FileName, false); break;
+                        case "Walk_UpLeft": TxtWalkUpLeft.Text = ofd.FileName; AutoCalculateForAnimation(metadata.Movements["Walk_UpLeft"], ofd.FileName, false); break;
+                        case "Walk_UpRight": TxtWalkUpRight.Text = ofd.FileName; AutoCalculateForAnimation(metadata.Movements["Walk_UpRight"], ofd.FileName, false); break;
+                        case "Walk_DownLeft": TxtWalkDownLeft.Text = ofd.FileName; AutoCalculateForAnimation(metadata.Movements["Walk_DownLeft"], ofd.FileName, false); break;
+                        case "Walk_DownRight": TxtWalkDownRight.Text = ofd.FileName; AutoCalculateForAnimation(metadata.Movements["Walk_DownRight"], ofd.FileName, false); break;
                         
-                        case "Run_Up": TxtRunUp.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Run_Up"], ofd.FileName, false); break;
-                        case "Run_Down": TxtRunDown.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Run_Down"], ofd.FileName, false); break;
-                        case "Run_Left": TxtRunLeft.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Run_Left"], ofd.FileName, false); break;
-                        case "Run_Right": TxtRunRight.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Run_Right"], ofd.FileName, false); break;
-                        case "Run_UpLeft": TxtRunUpLeft.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Run_UpLeft"], ofd.FileName, false); break;
-                        case "Run_UpRight": TxtRunUpRight.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Run_UpRight"], ofd.FileName, false); break;
-                        case "Run_DownLeft": TxtRunDownLeft.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Run_DownLeft"], ofd.FileName, false); break;
-                        case "Run_DownRight": TxtRunDownRight.Text = ofd.FileName; AutoCalcularParaAnimacion(metadata.Movements["Run_DownRight"], ofd.FileName, false); break;
+                        case "Run_Up": TxtRunUp.Text = ofd.FileName; AutoCalculateForAnimation(metadata.Movements["Run_Up"], ofd.FileName, false); break;
+                        case "Run_Down": TxtRunDown.Text = ofd.FileName; AutoCalculateForAnimation(metadata.Movements["Run_Down"], ofd.FileName, false); break;
+                        case "Run_Left": TxtRunLeft.Text = ofd.FileName; AutoCalculateForAnimation(metadata.Movements["Run_Left"], ofd.FileName, false); break;
+                        case "Run_Right": TxtRunRight.Text = ofd.FileName; AutoCalculateForAnimation(metadata.Movements["Run_Right"], ofd.FileName, false); break;
+                        case "Run_UpLeft": TxtRunUpLeft.Text = ofd.FileName; AutoCalculateForAnimation(metadata.Movements["Run_UpLeft"], ofd.FileName, false); break;
+                        case "Run_UpRight": TxtRunUpRight.Text = ofd.FileName; AutoCalculateForAnimation(metadata.Movements["Run_UpRight"], ofd.FileName, false); break;
+                        case "Run_DownLeft": TxtRunDownLeft.Text = ofd.FileName; AutoCalculateForAnimation(metadata.Movements["Run_DownLeft"], ofd.FileName, false); break;
+                        case "Run_DownRight": TxtRunDownRight.Text = ofd.FileName; AutoCalculateForAnimation(metadata.Movements["Run_DownRight"], ofd.FileName, false); break;
                     }
                 }
             }
         }
 
-        private void AutoCalcularParaAnimacion(AnimationData anim, string filePath, bool esPrincipal)
+        private void AutoCalculateForAnimation(AnimationData anim, string filePath, bool isMain)
         {
             anim.FilePath = filePath;
             
@@ -306,7 +328,7 @@ namespace VirtualPeto
                 int.TryParse(TxtFps.Text, out int fps);
                 anim.Fps = fps > 0 ? fps : 10;
 
-                if (esPrincipal)
+                if (isMain)
                 {
                     TxtColumns.Text = cols.ToString();
                     TxtRows.Text = rows.ToString();
@@ -332,7 +354,7 @@ namespace VirtualPeto
         {
             if ((sender as Button)?.DataContext is RandomAction action)
             {
-                MessageBoxResult result = MessageBox.Show($"¿Estás seguro de que deseas eliminar la acción '{action.ActionName}' por completo?", "Confirmar Eliminación", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                MessageBoxResult result = MessageBox.Show($"Are you sure you want to completely delete the action '{action.ActionName}'?", "Confirm Deletion", MessageBoxButton.YesNo, MessageBoxImage.Warning);
                 
                 if (result == MessageBoxResult.Yes)
                 {
@@ -365,7 +387,7 @@ namespace VirtualPeto
 
                 if (ofd.ShowDialog() == true)
                 {
-                    AutoCalcularParaAnimacion(action.Animation, ofd.FileName, false);
+                    AutoCalculateForAnimation(action.Animation, ofd.FileName, false);
                     LvwRandomActions.Items.Refresh();
                 }
             }
@@ -406,6 +428,13 @@ namespace VirtualPeto
             applyToAnimation(metadata.DraggedAnimation);
             applyToAnimation(metadata.ListeningAnimation);
             applyToAnimation(metadata.NotificationAnimation);
+            applyToAnimation(metadata.MusicAnimation);
+            applyToAnimation(metadata.FoodAnimation);
+            applyToAnimation(metadata.FoodGrabbedAnimation);
+            applyToAnimation(metadata.EatingFoodAnimation);
+            applyToAnimation(metadata.ItemAnimation);
+            applyToAnimation(metadata.ItemGrabbedAnimation);
+            applyToAnimation(metadata.UsingItemAnimation);
 
             if (metadata.Movements != null)
             {
@@ -465,25 +494,39 @@ namespace VirtualPeto
             metadata.DraggedAnimation.FilePath = TxtDraggedPath.Text;
             metadata.ListeningAnimation.FilePath = TxtListeningPath.Text;
             metadata.NotificationAnimation.FilePath = TxtNotificationPath.Text;
+            metadata.MusicAnimation.FilePath = TxtMusicPath.Text;
+            metadata.FoodAnimation.FilePath = TxtFoodPath.Text;
+            metadata.FoodGrabbedAnimation.FilePath = TxtFoodGrabbedPath.Text;
+            metadata.EatingFoodAnimation.FilePath = TxtEatingFoodPath.Text;
+            metadata.ItemAnimation.FilePath = TxtItemPath.Text;
+            metadata.ItemGrabbedAnimation.FilePath = TxtItemGrabbedPath.Text;
+            metadata.UsingItemAnimation.FilePath = TxtUsingItemPath.Text;
 
             int.TryParse(TxtFrameWidth.Text, out int gw);
             int.TryParse(TxtFrameHeight.Text, out int gh);
             int.TryParse(TxtFps.Text, out int gFps);
 
-            ActualizarValoresDefault(metadata.IdleAnimation, gw, gh, gFps, true);
-            ActualizarValoresDefault(metadata.SleepAnimation, gw, gh, gFps, false);
-            ActualizarValoresDefault(metadata.WakeUpAnimation, gw, gh, gFps, false);
+            UpdateDefaultValues(metadata.IdleAnimation, gw, gh, gFps, true);
+            UpdateDefaultValues(metadata.SleepAnimation, gw, gh, gFps, false);
+            UpdateDefaultValues(metadata.WakeUpAnimation, gw, gh, gFps, false);
 
-            ActualizarValoresDefault(metadata.IntroAnimation, gw, gh, gFps, false);
-            ActualizarValoresDefault(metadata.OutroAnimation, gw, gh, gFps, false);
-            ActualizarValoresDefault(metadata.ClickedAnimation, gw, gh, gFps, false);
-            ActualizarValoresDefault(metadata.DraggedAnimation, gw, gh, gFps, false);
-            ActualizarValoresDefault(metadata.ListeningAnimation, gw, gh, gFps, false);
-            ActualizarValoresDefault(metadata.NotificationAnimation, gw, gh, gFps, false);
+            UpdateDefaultValues(metadata.IntroAnimation, gw, gh, gFps, false);
+            UpdateDefaultValues(metadata.OutroAnimation, gw, gh, gFps, false);
+            UpdateDefaultValues(metadata.ClickedAnimation, gw, gh, gFps, false);
+            UpdateDefaultValues(metadata.DraggedAnimation, gw, gh, gFps, false);
+            UpdateDefaultValues(metadata.ListeningAnimation, gw, gh, gFps, false);
+            UpdateDefaultValues(metadata.NotificationAnimation, gw, gh, gFps, false);
+            UpdateDefaultValues(metadata.MusicAnimation, gw, gh, gFps, false);
+            UpdateDefaultValues(metadata.FoodAnimation, gw, gh, gFps, false);
+            UpdateDefaultValues(metadata.FoodGrabbedAnimation, gw, gh, gFps, false);
+            UpdateDefaultValues(metadata.EatingFoodAnimation, gw, gh, gFps, false);
+            UpdateDefaultValues(metadata.ItemAnimation, gw, gh, gFps, false);
+            UpdateDefaultValues(metadata.ItemGrabbedAnimation, gw, gh, gFps, false);
+            UpdateDefaultValues(metadata.UsingItemAnimation, gw, gh, gFps, false);
 
             foreach (var kvp in metadata.Movements)
             {
-                ActualizarValoresDefault(kvp.Value, gw, gh, gFps, false);
+                UpdateDefaultValues(kvp.Value, gw, gh, gFps, false);
             }
 
             metadata.RandomActions.Clear();
@@ -491,7 +534,7 @@ namespace VirtualPeto
             {
                 if (!string.IsNullOrWhiteSpace(action.ActionName) && !string.IsNullOrWhiteSpace(action.Animation.FilePath))
                 {
-                    ActualizarValoresDefault(action.Animation, gw, gh, gFps, false);
+                    UpdateDefaultValues(action.Animation, gw, gh, gFps, false);
                     metadata.RandomActions.Add(action);
                 }
             }
@@ -522,7 +565,7 @@ namespace VirtualPeto
         {
             if (sender is Button btn && btn.Tag is string tag)
             {
-                MessageBoxResult result = MessageBox.Show($"¿Estás seguro de que deseas borrar la animación de '{tag}'?", "Confirmar Acción", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                MessageBoxResult result = MessageBox.Show($"Are you sure you want to clear the animation for '{tag}'?", "Confirm Action", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 
                 if (result == MessageBoxResult.Yes)
                 {
@@ -537,6 +580,13 @@ namespace VirtualPeto
                         case "Dragged": TxtDraggedPath.Text = ""; metadata.DraggedAnimation = new AnimationData(); break;
                         case "Listening": TxtListeningPath.Text = ""; metadata.ListeningAnimation = new AnimationData(); break;
                         case "Notification": TxtNotificationPath.Text = ""; metadata.NotificationAnimation = new AnimationData(); break;
+                        case "Music": TxtMusicPath.Text = ""; metadata.MusicAnimation = new AnimationData(); break;
+                        case "Food": TxtFoodPath.Text = ""; metadata.FoodAnimation = new AnimationData(); break;
+                        case "FoodGrabbed": TxtFoodGrabbedPath.Text = ""; metadata.FoodGrabbedAnimation = new AnimationData(); break;
+                        case "EatingFood": TxtEatingFoodPath.Text = ""; metadata.EatingFoodAnimation = new AnimationData(); break;
+                        case "Item": TxtItemPath.Text = ""; metadata.ItemAnimation = new AnimationData(); break;
+                        case "ItemGrabbed": TxtItemGrabbedPath.Text = ""; metadata.ItemGrabbedAnimation = new AnimationData(); break;
+                        case "UsingItem": TxtUsingItemPath.Text = ""; metadata.UsingItemAnimation = new AnimationData(); break;
                         
                         case "Walk_Up": TxtWalkUp.Text = ""; metadata.Movements["Walk_Up"] = new AnimationData(); break;
                         case "Walk_Down": TxtWalkDown.Text = ""; metadata.Movements["Walk_Down"] = new AnimationData(); break;
@@ -582,7 +632,7 @@ namespace VirtualPeto
             ZipFile.ExtractToDirectory(packagePath, targetPath);
         }
 
-        private void ActualizarValoresDefault(AnimationData anim, int gw, int gh, int gFps, bool esIdle)
+        private void UpdateDefaultValues(AnimationData anim, int gw, int gh, int gFps, bool isIdle)
         {
             if (string.IsNullOrWhiteSpace(anim.FilePath)) return;
             string selected = (CmbFormat.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
@@ -598,7 +648,7 @@ namespace VirtualPeto
             ///if (anim.Fps == 0) anim.Fps = gFps > 0 ? gFps : 10;
             if (isSpriteSheet)
             {
-                if (esIdle)
+                if (isIdle)
                 {
                     int.TryParse(TxtColumns.Text, out int c);
                     int.TryParse(TxtRows.Text, out int r);
@@ -653,6 +703,13 @@ namespace VirtualPeto
                 else if (key == "Dragged") targetAnim = metadata.DraggedAnimation;
                 else if (key == "Listening") targetAnim = metadata.ListeningAnimation;
                 else if (key == "Notification") targetAnim = metadata.NotificationAnimation;
+                else if (key == "Music") targetAnim = metadata.MusicAnimation;
+                else if (key == "Food") targetAnim = metadata.FoodAnimation;
+                else if (key == "FoodGrabbed") targetAnim = metadata.FoodGrabbedAnimation;
+                else if (key == "EatingFood") targetAnim = metadata.EatingFoodAnimation;
+                else if (key == "Item") targetAnim = metadata.ItemAnimation;
+                else if (key == "ItemGrabbed") targetAnim = metadata.ItemGrabbedAnimation;
+                else if (key == "UsingItem") targetAnim = metadata.UsingItemAnimation;
                 else if (metadata.Movements.ContainsKey(key)) targetAnim = metadata.Movements[key];
                 else return;
 

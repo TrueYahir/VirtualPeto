@@ -5,50 +5,6 @@
         Title="SmartPetWindow" Height="150" Width="150">
     
     <local:PetWindowBase.Resources>
-        
-        <Style TargetType="ContextMenu">
-            <Setter Property="OverridesDefaultStyle" Value="True"/>
-            <Setter Property="SnapsToDevicePixels" Value="True"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ContextMenu">
-                        <Border Background="#1A1A24" BorderBrush="#3A3A4A" BorderThickness="1" CornerRadius="4" Padding="2">
-                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        
-        <Style TargetType="MenuItem">
-            <Setter Property="OverridesDefaultStyle" Value="True"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="MenuItem">
-                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="2">
-                            <Grid Margin="{TemplateBinding Padding}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="24"/> 
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                
-                                <ContentPresenter x:Name="Icon" Content="{TemplateBinding Icon}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <ContentPresenter Grid.Column="1" ContentSource="Header" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="8,0,15,0"/>
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#2C2C3A"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </local:PetWindowBase.Resources>
 
     <local:PetWindowBase.ContextMenu>
@@ -89,6 +45,12 @@
             <MenuItem Header="Generate Toy" Click="MenuGenerateToy_Click">
                 <MenuItem.Icon>
                     <Image Source="pack://application:,,,/Assets/Buttons/btn_game.png" Width="14" Height="14" Stretch="Uniform" Opacity="0.8"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            
+            <MenuItem Header="Generate Jukebox" Click="MenuGenerateJukebox_Click">
+                <MenuItem.Icon>
+                    <TextBlock Text="🎵" Foreground="White" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </MenuItem.Icon>
             </MenuItem>
             

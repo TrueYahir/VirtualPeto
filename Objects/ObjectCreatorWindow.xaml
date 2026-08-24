@@ -92,7 +92,8 @@
                 <TextBlock Text="Type" Style="{StaticResource LabelStyle}"/>
                 <ComboBox x:Name="CmbCategory" Style="{StaticResource InputComboBoxStyle}">
                     <ComboBoxItem Content="Food" IsSelected="True"/>
-                    <ComboBoxItem Content="Object"/>
+                    <ComboBoxItem Content="Toy"/>
+                    <ComboBoxItem Content="Jukebox"/>
                 </ComboBox>
 
                 <TextBlock Text="Object Image" Style="{StaticResource LabelStyle}"/>

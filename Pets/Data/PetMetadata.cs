@@ -31,6 +31,15 @@ namespace VirtualPeto
         public AnimationData WakeUpAnimation {get; set;} = new AnimationData();
         public AnimationData ListeningAnimation {get; set;} = new AnimationData();
         public AnimationData NotificationAnimation{get; set;} = new AnimationData();
+        public AnimationData MusicAnimation { get; set; } = new AnimationData();
+
+        public AnimationData FoodAnimation { get; set; } = new AnimationData();
+        public AnimationData FoodGrabbedAnimation { get; set; } = new AnimationData();
+        public AnimationData EatingFoodAnimation { get; set; } = new AnimationData();
+
+        public AnimationData ItemAnimation { get; set; } = new AnimationData();
+        public AnimationData ItemGrabbedAnimation { get; set; } = new AnimationData();
+        public AnimationData UsingItemAnimation { get; set; } = new AnimationData();
 
         public Dictionary<string, AnimationData> Movements { get; set; } = new Dictionary<string, AnimationData>()
         {

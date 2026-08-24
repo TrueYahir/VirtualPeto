@@ -161,8 +161,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added the option to create a GIF Package from the Video Background Remover window.
 - Added an option to size the pet when its running.
 - Now you can see the type of archive in the library section.
+- The food/object creator has been removed in the create pet section, the option in create smart pet has been added, as a pet object and extra animations for the pet reacting to the object.
 
 ### Added
 - Added a optión to refresh the values of general settings for Smart pet values for all the archives. 
 - Sprite Extractor 
 - Audio Converter
+- Food and items activated.
+- Jukebox added to the program, the pet reacts to music. Jukebox specifications: play music, pause, mute, volume, playlist.
+- Sprite extractor (extract sprites form a gif)
+- Sprite unpacker (Gets the sprite from a sprite sheet, allows to create a new sprite sheet from specific sprites).
+- Sprite packer

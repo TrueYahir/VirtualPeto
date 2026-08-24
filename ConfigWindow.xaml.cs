@@ -288,6 +288,10 @@ namespace VirtualPeto
             {
                 TxtDefaultFolder.Text = SettingsManager.Current.DefaultSaveFolder;
             }
+            if (TxtJukeboxMusicFolder != null && !string.IsNullOrEmpty(SettingsManager.Current.JukeboxMusicFolder))
+            {
+                TxtJukeboxMusicFolder.Text = SettingsManager.Current.JukeboxMusicFolder;
+            }
         }
         protected override void OnClosing(CancelEventArgs e)
         {
@@ -1032,6 +1036,10 @@ namespace VirtualPeto
             {
                 filteredList = filteredList.Where(p => p.IsActive);
             }
+            if (ChkOnlyFavoritesPets != null && ChkOnlyFavoritesPets.IsChecked == true)
+            {
+                filteredList = filteredList.Where(p => p.IsFavorite);
+            }
 
             UpdatePetsList(filteredList.ToList());
             UpdatePetViewMode(); 
@@ -1433,52 +1441,6 @@ namespace VirtualPeto
             LoadLibrary();
         }
 
-        //Items Logic
-
-        private void BtnOpenFoodCreator_Click(object sender, RoutedEventArgs e)
-        {
-            FoodCreatorWindow foodCreator = new FoodCreatorWindow();
-            bool? result = foodCreator.ShowDialog();
-        }
-
-        private void BtnEditFoodCreator_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog openFileDialog = new OpenFileDialog
-            {
-                Filter = "Virtual Pet Food Files (*.vfood)|*.vfood", 
-                Title = "Select a food file to edit"
-            };
-            
-            if(openFileDialog.ShowDialog() == true)
-            {
-                MessageBox.Show($"Editando el archivo de comida: {openFileDialog.FileName}", "En Construcción", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-
-        // === EVENTOS DE OBJETOS ===
-
-        private void BtnOpenObjectCreator_Click(object sender, RoutedEventArgs e)
-        {
-            VirtualPeto.Objects.ObjectCreatorWindow objectCreator = new VirtualPeto.Objects.ObjectCreatorWindow();
-    
-            bool? result = objectCreator.ShowDialog();
-        }
-
-        private void BtnEditObjectCreator_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFileDialog openFileDialog = new OpenFileDialog
-            {
-                Filter = "Virtual Pet Object Files (*.vobj)|*.vobj", 
-                Title = "Select an object file to edit"
-            };
-            
-            if(openFileDialog.ShowDialog() == true)
-            {
-                // Lógica de edición de objetos
-                MessageBox.Show($"Editando el archivo de objeto: {openFileDialog.FileName}", "En Construcción", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-
         // Tools logic
 
         private void BtnLaunchGifRemover_Click(object sender, RoutedEventArgs e)
@@ -1578,6 +1540,18 @@ namespace VirtualPeto
             extractorWindow.Owner = this;
             extractorWindow.ShowDialog();
             
+        }
+        private void BtnLaunchSpriteTools_Click(object sender, RoutedEventArgs e)
+        {
+            VirtualPeto.Tools.SpriteToolWindow spriteToolWindow = new VirtualPeto.Tools.SpriteToolWindow();
+            spriteToolWindow.Owner = this;
+            spriteToolWindow.ShowDialog();
+        }
+        private void BtnLaunchSpritePacker_Click(object sender, RoutedEventArgs e)
+        {
+            VirtualPeto.Tools.SpritePackerWindow spritePackerWindow = new VirtualPeto.Tools.SpritePackerWindow();
+            spritePackerWindow.Owner = this;
+            spritePackerWindow.ShowDialog();
         }
 
         // === SETTINGS ===
@@ -1891,6 +1865,21 @@ namespace VirtualPeto
                 {
                     TxtDefaultFolder.Text = dialog.SelectedPath;
                     SettingsManager.Current.DefaultSaveFolder = dialog.SelectedPath;
+                    SettingsManager.Save();
+                }
+            }
+        }
+
+        private void BtnBrowseJukeboxFolder_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                dialog.Description = "Select the folder that contains music for the Jukebox";
+                dialog.UseDescriptionForTitle = true;
+                if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    TxtJukeboxMusicFolder.Text = dialog.SelectedPath;
+                    SettingsManager.Current.JukeboxMusicFolder = dialog.SelectedPath;
                     SettingsManager.Save();
                 }
             }

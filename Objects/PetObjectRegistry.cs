@@ -41,33 +41,41 @@ namespace VirtualPeto.Objects
             }
         }
 
-        public static FoodObject SpawnFood(Rect allowedArea, Random random, Point nearPoint)
+        public static FoodObject SpawnFood(Rect allowedArea, Random random, Point nearPoint, AnimationData? anim = null, string petDir = "")
         {
             FoodObject food = new FoodObject();
+            if (anim != null) food.SetAnimation(anim, petDir);
             PlaceObject(food, allowedArea, random, nearPoint);
             Register(food);
             food.Show();
             return food;
         }
 
-        public static ToyObject SpawnToy(Rect allowedArea, Random random, Point nearPoint)
+        public static ToyObject SpawnToy(Rect allowedArea, Random random, Point nearPoint, AnimationData? anim = null, string petDir = "")
         {
             ToyObject toy = new ToyObject();
+            if (anim != null) toy.SetAnimation(anim, petDir);
             PlaceObject(toy, allowedArea, random, nearPoint);
             Register(toy);
             toy.Show();
             return toy;
         }
 
-        private static void PlaceObject(PetInteractableObject obj, Rect allowedArea, Random random, Point nearPoint)
+        public static JukeboxObject SpawnJukebox(Rect allowedArea, Random random, Point nearPoint)
         {
-            double xOffset = random.NextDouble() * 140 - 70;
-            double yOffset = random.NextDouble() * 90 + 24;
-            double targetX = nearPoint.X + xOffset;
-            double targetY = nearPoint.Y + yOffset;
+            JukeboxObject jukebox = new JukeboxObject();
+            PlaceObject(jukebox, allowedArea, random, nearPoint);
+            jukebox.Show();
+            return jukebox;
+        }
 
-            obj.Left = Math.Max(allowedArea.Left, Math.Min(allowedArea.Right - obj.Width, targetX));
-            obj.Top = Math.Max(allowedArea.Top, Math.Min(allowedArea.Bottom - obj.Height, targetY));
+        private static void PlaceObject(Window obj, Rect allowedArea, Random random, Point nearPoint)
+        {
+            double targetX = allowedArea.Left + random.NextDouble() * (allowedArea.Width - obj.Width);
+            double targetY = allowedArea.Top + random.NextDouble() * (allowedArea.Height - obj.Height);
+
+            obj.Left = targetX;
+            obj.Top = targetY;
         }
     }
 }

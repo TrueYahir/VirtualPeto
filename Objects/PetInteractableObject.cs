@@ -1,20 +1,31 @@
 using System;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using WpfAnimatedGif;
 
 namespace VirtualPeto.Objects
 {
     public enum PetObjectType
     {
         Food,
-        Toy
+        Toy,
+        Jukebox
     }
 
     public abstract class PetInteractableObject : PetWindowBase
     {
         private readonly DispatcherTimer _lifeTimer;
+        private Image? _spriteImage;
+        private BitmapImage? _spriteSheet;
+        private DispatcherTimer? _animationTimer;
+        private int _currentFrame = 0;
+        private int _totalFrames;
+        private int _frameWidth;
+        private int _frameHeight;
 
         public Guid ObjectId { get; } = Guid.NewGuid();
         public PetObjectType ObjectType { get; }
@@ -57,6 +68,97 @@ namespace VirtualPeto.Objects
                 }
             };
             _lifeTimer.Start();
+        }
+
+        public void SetAnimation(AnimationData anim, string petDirectory)
+        {
+            if (anim == null || string.IsNullOrWhiteSpace(anim.FilePath)) return;
+
+            string fullPath = Path.Combine(petDirectory, anim.FilePath);
+            if (!File.Exists(fullPath)) return;
+
+            _frameWidth = anim.FrameWidth > 0 ? anim.FrameWidth : 64;
+            _frameHeight = anim.FrameHeight > 0 ? anim.FrameHeight : 64;
+
+            Width = _frameWidth;
+            Height = _frameHeight;
+
+            _spriteImage = new Image
+            {
+                Width = _frameWidth,
+                Height = _frameHeight,
+                Stretch = Stretch.None,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top
+            };
+
+            Content = _spriteImage;
+
+            if (anim.IsSpriteSheet)
+            {
+                _totalFrames = anim.TotalFrames > 0 ? anim.TotalFrames : 1;
+                int fps = anim.Fps > 0 ? anim.Fps : 10;
+
+                _spriteSheet = new BitmapImage();
+                _spriteSheet.BeginInit();
+                _spriteSheet.UriSource = new Uri(fullPath, UriKind.Absolute);
+                _spriteSheet.CacheOption = BitmapCacheOption.OnLoad;
+                _spriteSheet.EndInit();
+
+                _currentFrame = 0;
+                
+                _animationTimer = new DispatcherTimer(DispatcherPriority.Render);
+                _animationTimer.Interval = TimeSpan.FromMilliseconds(1000.0 / fps);
+                _animationTimer.Tick += (s, e) =>
+                {
+                    if (_spriteSheet == null || _totalFrames <= 0) return;
+                    int pw = _spriteSheet.PixelWidth;
+                    int ph = _spriteSheet.PixelHeight;
+                    if (pw == 0 || ph == 0) return;
+
+                    int columns = Math.Max(1, pw / _frameWidth);
+                    int x = (_currentFrame % columns) * _frameWidth;
+                    int y = (_currentFrame / columns) * _frameHeight;
+
+                    int cropX = Math.Min(x, pw - 1);
+                    int cropY = Math.Min(y, ph - 1);
+                    int cropW = Math.Min(_frameWidth, pw - cropX);
+                    int cropH = Math.Min(_frameHeight, ph - cropY);
+
+                    if (cropW > 0 && cropH > 0 && _spriteImage != null)
+                    {
+                        _spriteImage.Source = new CroppedBitmap(_spriteSheet, new Int32Rect(cropX, cropY, cropW, cropH));
+                    }
+                    _currentFrame = (_currentFrame + 1) % _totalFrames;
+                };
+                _animationTimer.Start();
+                
+                int pwStart = _spriteSheet.PixelWidth;
+                int phStart = _spriteSheet.PixelHeight;
+                if (pwStart > 0 && phStart > 0 && _spriteImage != null)
+                {
+                    int startW = Math.Min(_frameWidth, pwStart);
+                    int startH = Math.Min(_frameHeight, phStart);
+                    _spriteImage.Source = new CroppedBitmap(_spriteSheet, new Int32Rect(0, 0, startW, startH));
+                }
+            }
+            else
+            {
+                BitmapImage img = new BitmapImage();
+                img.BeginInit();
+                img.UriSource = new Uri(fullPath, UriKind.Absolute);
+                img.CacheOption = BitmapCacheOption.OnLoad;
+                img.EndInit();
+
+                if (fullPath.ToLower().EndsWith(".gif") && _spriteImage != null)
+                {
+                    ImageBehavior.SetAnimatedSource(_spriteImage, img);
+                }
+                else if (_spriteImage != null)
+                {
+                    _spriteImage.Source = img;
+                }
+            }
         }
 
         public Point GetCenter()
@@ -112,6 +214,7 @@ namespace VirtualPeto.Objects
         protected override void OnClosed(EventArgs e)
         {
             _lifeTimer.Stop();
+            _animationTimer?.Stop();
             PetObjectRegistry.Unregister(this);
             base.OnClosed(e);
         }

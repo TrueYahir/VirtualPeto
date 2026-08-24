@@ -245,6 +245,44 @@
                             <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="WakeUp" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
                             <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="WakeUp" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" FontWeight="Bold"/>
                         </Grid>
+                        <Separator Margin="0,15,0,10" Background="#444"/>
+                        <TextBlock Text="Interaction Animations" FontSize="14" FontWeight="Bold" Margin="0,0,0,10" Foreground="#4A90E2"/>
+
+                        <TextBlock Text="Intro (Spawn):" FontWeight="SemiBold" Margin="0,5,0,2" Foreground="#DDD"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtIntroPath" IsReadOnly="True" Background="#1A1A24" Foreground="White" CaretBrush="White" BorderBrush="#444" Padding="4"/>
+                            <Button Grid.Column="1" Content="Browse..." Click="BtnBrowse_Click" Tag="Intro" Width="75" Margin="5,0,0,0" Background="#4A90E2" Foreground="White" BorderThickness="0"/>
+                            <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="Intro" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                            <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="Intro" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                        </Grid>
+
+                        <TextBlock Text="Outro (Despawn):" FontWeight="SemiBold" Margin="0,5,0,2" Foreground="#DDD"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtOutroPath" IsReadOnly="True" Background="#1A1A24" Foreground="White" CaretBrush="White" BorderBrush="#444" Padding="4"/>
+                            <Button Grid.Column="1" Content="Browse..." Click="BtnBrowse_Click" Tag="Outro" Width="75" Margin="5,0,0,0" Background="#4A90E2" Foreground="White" BorderThickness="0"/>
+                            <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="Outro" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                            <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="Outro" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                        </Grid>
+
+                        <TextBlock Text="Clicked:" FontWeight="SemiBold" Margin="0,5,0,2" Foreground="#DDD"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtClickedPath" IsReadOnly="True" Background="#1A1A24" Foreground="White" CaretBrush="White" BorderBrush="#444" Padding="4"/>
+                            <Button Grid.Column="1" Content="Browse..." Click="BtnBrowse_Click" Tag="Clicked" Width="75" Margin="5,0,0,0" Background="#4A90E2" Foreground="White" BorderThickness="0"/>
+                            <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="Clicked" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                            <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="Clicked" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                        </Grid>
+
+                        <TextBlock Text="Dragged:" FontWeight="SemiBold" Margin="0,5,0,2" Foreground="#DDD"/>
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtDraggedPath" IsReadOnly="True" Background="#1A1A24" Foreground="White" CaretBrush="White" BorderBrush="#444" Padding="4"/>
+                            <Button Grid.Column="1" Content="Browse..." Click="BtnBrowse_Click" Tag="Dragged" Width="75" Margin="5,0,0,0" Background="#4A90E2" Foreground="White" BorderThickness="0"/>
+                            <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="Dragged" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                            <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="Dragged" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                        </Grid>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -490,42 +528,6 @@
                     <StackPanel>
                         <TextBlock Text="Interaction &amp; System Animations" FontSize="14" FontWeight="Bold" Margin="0,0,0,10" Foreground="#4A90E2"/>
 
-                        <TextBlock Text="Intro (Spawn):" FontWeight="SemiBold" Margin="0,5,0,2" Foreground="#DDD"/>
-                        <Grid Margin="0,0,0,10">
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <TextBox x:Name="TxtIntroPath" IsReadOnly="True" Background="#1A1A24" Foreground="White" CaretBrush="White" BorderBrush="#444" Padding="4"/>
-                            <Button Grid.Column="1" Content="Browse..." Click="BtnBrowse_Click" Tag="Intro" Width="75" Margin="5,0,0,0" Background="#4A90E2" Foreground="White" BorderThickness="0"/>
-                            <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="Intro" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
-                            <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="Intro" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
-                        </Grid>
-
-                        <TextBlock Text="Outro (Despawn):" FontWeight="SemiBold" Margin="0,5,0,2" Foreground="#DDD"/>
-                        <Grid Margin="0,0,0,10">
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <TextBox x:Name="TxtOutroPath" IsReadOnly="True" Background="#1A1A24" Foreground="White" CaretBrush="White" BorderBrush="#444" Padding="4"/>
-                            <Button Grid.Column="1" Content="Browse..." Click="BtnBrowse_Click" Tag="Outro" Width="75" Margin="5,0,0,0" Background="#4A90E2" Foreground="White" BorderThickness="0"/>
-                            <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="Outro" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
-                            <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="Outro" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
-                        </Grid>
-
-                        <TextBlock Text="Clicked:" FontWeight="SemiBold" Margin="0,5,0,2" Foreground="#DDD"/>
-                        <Grid Margin="0,0,0,10">
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <TextBox x:Name="TxtClickedPath" IsReadOnly="True" Background="#1A1A24" Foreground="White" CaretBrush="White" BorderBrush="#444" Padding="4"/>
-                            <Button Grid.Column="1" Content="Browse..." Click="BtnBrowse_Click" Tag="Clicked" Width="75" Margin="5,0,0,0" Background="#4A90E2" Foreground="White" BorderThickness="0"/>
-                            <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="Clicked" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
-                            <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="Clicked" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
-                        </Grid>
-
-                        <TextBlock Text="Dragged:" FontWeight="SemiBold" Margin="0,5,0,2" Foreground="#DDD"/>
-                        <Grid Margin="0,0,0,10">
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <TextBox x:Name="TxtDraggedPath" IsReadOnly="True" Background="#1A1A24" Foreground="White" CaretBrush="White" BorderBrush="#444" Padding="4"/>
-                            <Button Grid.Column="1" Content="Browse..." Click="BtnBrowse_Click" Tag="Dragged" Width="75" Margin="5,0,0,0" Background="#4A90E2" Foreground="White" BorderThickness="0"/>
-                            <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="Dragged" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
-                            <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="Dragged" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
-                        </Grid>
-
                         <TextBlock Text="Listening:" FontWeight="SemiBold" Margin="0,5,0,2" Foreground="#DDD"/>
                         <Grid Margin="0,0,0,10">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
@@ -542,6 +544,80 @@
                             <Button Grid.Column="1" Content="Browse..." Click="BtnBrowse_Click" Tag="Notification" Width="75" Margin="5,0,0,0" Background="#4A90E2" Foreground="White" BorderThickness="0"/>
                             <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="Notification" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
                             <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="Notification" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                        </Grid>
+                        
+                        <TextBlock Text="Music / Dance:" FontWeight="SemiBold" Margin="0,5,0,2" Foreground="#DDD"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtMusicPath" IsReadOnly="True" Background="#1A1A24" Foreground="White" CaretBrush="White" BorderBrush="#444" Padding="4"/>
+                            <Button Grid.Column="1" Content="Browse..." Click="BtnBrowse_Click" Tag="Music" Width="75" Margin="5,0,0,0" Background="#4A90E2" Foreground="White" BorderThickness="0"/>
+                            <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="Music" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                            <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="Music" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Items">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Food" FontSize="14" FontWeight="Bold" Margin="0,0,0,10" Foreground="#4A90E2"/>
+
+                        <TextBlock Text="Food:" FontWeight="SemiBold" Margin="0,5,0,2" Foreground="#DDD"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtFoodPath" IsReadOnly="True" Background="#1A1A24" Foreground="White" CaretBrush="White" BorderBrush="#444" Padding="4"/>
+                            <Button Grid.Column="1" Content="Browse..." Click="BtnBrowse_Click" Tag="Food" Width="75" Margin="5,0,0,0" Background="#4A90E2" Foreground="White" BorderThickness="0"/>
+                            <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="Food" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                            <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="Food" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                        </Grid>
+
+                        <TextBlock Text="Food Grabbed:" FontWeight="SemiBold" Margin="0,5,0,2" Foreground="#DDD"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtFoodGrabbedPath" IsReadOnly="True" Background="#1A1A24" Foreground="White" CaretBrush="White" BorderBrush="#444" Padding="4"/>
+                            <Button Grid.Column="1" Content="Browse..." Click="BtnBrowse_Click" Tag="FoodGrabbed" Width="75" Margin="5,0,0,0" Background="#4A90E2" Foreground="White" BorderThickness="0"/>
+                            <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="FoodGrabbed" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                            <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="FoodGrabbed" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                        </Grid>
+
+                        <TextBlock Text="Eating Food:" FontWeight="SemiBold" Margin="0,5,0,2" Foreground="#DDD"/>
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtEatingFoodPath" IsReadOnly="True" Background="#1A1A24" Foreground="White" CaretBrush="White" BorderBrush="#444" Padding="4"/>
+                            <Button Grid.Column="1" Content="Browse..." Click="BtnBrowse_Click" Tag="EatingFood" Width="75" Margin="5,0,0,0" Background="#4A90E2" Foreground="White" BorderThickness="0"/>
+                            <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="EatingFood" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                            <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="EatingFood" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                        </Grid>
+
+                        <Separator Margin="0,5,0,15" Background="#444"/>
+                        <TextBlock Text="Item" FontSize="14" FontWeight="Bold" Margin="0,0,0,10" Foreground="#4A90E2"/>
+
+                        <TextBlock Text="Item:" FontWeight="SemiBold" Margin="0,5,0,2" Foreground="#DDD"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtItemPath" IsReadOnly="True" Background="#1A1A24" Foreground="White" CaretBrush="White" BorderBrush="#444" Padding="4"/>
+                            <Button Grid.Column="1" Content="Browse..." Click="BtnBrowse_Click" Tag="Item" Width="75" Margin="5,0,0,0" Background="#4A90E2" Foreground="White" BorderThickness="0"/>
+                            <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="Item" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                            <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="Item" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                        </Grid>
+
+                        <TextBlock Text="Item Grabbed:" FontWeight="SemiBold" Margin="0,5,0,2" Foreground="#DDD"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtItemGrabbedPath" IsReadOnly="True" Background="#1A1A24" Foreground="White" CaretBrush="White" BorderBrush="#444" Padding="4"/>
+                            <Button Grid.Column="1" Content="Browse..." Click="BtnBrowse_Click" Tag="ItemGrabbed" Width="75" Margin="5,0,0,0" Background="#4A90E2" Foreground="White" BorderThickness="0"/>
+                            <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="ItemGrabbed" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                            <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="ItemGrabbed" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                        </Grid>
+
+                        <TextBlock Text="Using Item:" FontWeight="SemiBold" Margin="0,5,0,2" Foreground="#DDD"/>
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtUsingItemPath" IsReadOnly="True" Background="#1A1A24" Foreground="White" CaretBrush="White" BorderBrush="#444" Padding="4"/>
+                            <Button Grid.Column="1" Content="Browse..." Click="BtnBrowse_Click" Tag="UsingItem" Width="75" Margin="5,0,0,0" Background="#4A90E2" Foreground="White" BorderThickness="0"/>
+                            <Button Grid.Column="2" Content="..." Click="BtnAnimSettings_Click" Tag="UsingItem" Width="35" Margin="5,0,0,0" Background="#3E3E42" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
+                            <Button Grid.Column="3" Content="X" Width="30" Margin="5,0,0,0" Tag="UsingItem" Click="BtnClear_Click" Background="#FF5C5C" Foreground="White" BorderThickness="0" FontWeight="Bold"/>
                         </Grid>
                     </StackPanel>
                 </ScrollViewer>

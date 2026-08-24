@@ -105,6 +105,12 @@ namespace VirtualPeto
             }
         }
 
+        private void BtnClearAudio_Click(object sender, RoutedEventArgs e)
+        {
+            _selectedAudioFullPath = string.Empty;
+            TxtAudio.Text = string.Empty;
+        }
+
         private void BtnSave_Click(object sender, RoutedEventArgs e)
         {
             _data.IsSpriteSheet = ChkIsSprite.IsChecked ?? false;

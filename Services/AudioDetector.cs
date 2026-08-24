@@ -13,6 +13,7 @@ namespace VirtualPeto.Services
         private int _silenceMsThreshold = 300;
         private int _detectMsThreshold = 150;
         private bool _isAudioActive = false;
+        public bool IsAudioActive => _isAudioActive;
         private const int FrameDurationMs = 50;
 
         public static readonly AudioDetector Instance = new AudioDetector();
