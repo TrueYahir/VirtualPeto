@@ -172,3 +172,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sprite extractor (extract sprites form a gif)
 - Sprite unpacker (Gets the sprite from a sprite sheet, allows to create a new sprite sheet from specific sprites).
 - Sprite packer
+
+## [2.4] - 2026-09-02
+### Fixed
+- Fixed the following mouse animations

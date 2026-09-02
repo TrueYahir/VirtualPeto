@@ -392,6 +392,70 @@ namespace VirtualPeto
                 }
             }
         }
+
+        private void BtnPreviewRandomAction_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as Button)?.DataContext is not RandomAction action)
+            {
+                return;
+            }
+
+            if (action.Animation == null)
+            {
+                action.Animation = new AnimationData();
+            }
+
+            if (string.IsNullOrWhiteSpace(action.Animation.FilePath))
+            {
+                MessageBox.Show("Please select an animation file first.", "No File Selected", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            AnimationSettingsWindow settingsWin = new AnimationSettingsWindow(
+                action.Animation,
+                System.IO.Path.GetDirectoryName(_currentEditingFilePath) ?? "",
+                action.Animation.FilePath);
+            settingsWin.Owner = this;
+            settingsWin.ShowDialog();
+            LvwRandomActions.Items.Refresh();
+        }
+
+        private void LvwRandomActions_Loaded(object sender, RoutedEventArgs e)
+        {
+            UpdateRandomActionColumnWidths();
+        }
+
+        private void LvwRandomActions_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateRandomActionColumnWidths();
+        }
+
+        private void UpdateRandomActionColumnWidths()
+        {
+            if (LvwRandomActions == null || ColRandomActionName == null || ColRandomActionProbability == null || ColRandomActionFile == null || ColRandomActionPreview == null || ColRandomActionDelete == null)
+            {
+                return;
+            }
+
+            double availableWidth = LvwRandomActions.ActualWidth - 36;
+            if (availableWidth <= 0)
+            {
+                return;
+            }
+
+            double nameWidth = Math.Max(150, availableWidth * 0.23);
+            double probabilityWidth = Math.Max(90, availableWidth * 0.12);
+            double fileWidth = Math.Max(240, availableWidth * 0.43);
+            double previewWidth = Math.Max(90, availableWidth * 0.14);
+            double deleteWidth = Math.Max(55, availableWidth - (nameWidth + probabilityWidth + fileWidth + previewWidth));
+
+            ColRandomActionName.Width = nameWidth;
+            ColRandomActionProbability.Width = probabilityWidth;
+            ColRandomActionFile.Width = fileWidth;
+            ColRandomActionPreview.Width = previewWidth;
+            ColRandomActionDelete.Width = deleteWidth;
+        }
+
         private void BtnApplyGlobalSettings_Click(object sender, RoutedEventArgs e)
         {
             int.TryParse(TxtFrameWidth.Text, out int globalWidth);

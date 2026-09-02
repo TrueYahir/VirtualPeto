@@ -460,7 +460,6 @@ namespace VirtualPeto
 
             if (_currentState == PetState.Dragged) return;
 
-            // Check for playing Jukeboxes
             bool isJukeboxPlaying = System.Windows.Application.Current.Windows.OfType<JukeboxObject>().Any(j => j.IsPlaying);
             if (isJukeboxPlaying && _currentState != PetState.Music && _currentState != PetState.Sleep && _currentState != PetState.Intro && _currentState != PetState.Outro && _currentState != PetState.Clicked && _currentState != PetState.Dragged)
             {
@@ -471,7 +470,7 @@ namespace VirtualPeto
                 SetState(PetState.Idle);
             }
 
-            if (ProcessObjectInteraction(frameScale))
+            if (!_isFollowingMouse && ProcessObjectInteraction(frameScale))
             {
                 return;
             }
@@ -482,33 +481,8 @@ namespace VirtualPeto
                 _currentState != PetState.Listening && _currentState != PetState.Notification &&
                 _currentState != PetState.Music)
             {
-                GetCursorPos(out POINT cursorPoint);
-                var source = PresentationSource.FromVisual(this);
-                Point cursorDip = source != null
-                    ? source.CompositionTarget.TransformFromDevice.Transform(new Point(cursorPoint.X, cursorPoint.Y))
-                    : new Point(cursorPoint.X, cursorPoint.Y);
-
-                double targetLeft = cursorDip.X - (this.Width / 2.0);
-                double targetTop = cursorDip.Y - (this.Height / 2.0);
-                double dx = targetLeft - this.Left;
-                double dy = targetTop - this.Top;
-                double distance = Math.Sqrt(dx * dx + dy * dy);
-
-                if (distance > 2)
-                {
-                    double step = Math.Min(distance, RunSpeed * 1.5 * frameScale);
-                    this.Left += (dx / distance) * step;
-                    this.Top += (dy / distance) * step;
-
-                    if (_currentState != PetState.Walking && _currentState != PetState.Running)
-                    {
-                        SetState(PetState.Walking);
-                    }
-                }
-                else if (_currentState == PetState.Walking || _currentState == PetState.Running)
-                {
-                    SetState(PetState.Idle);
-                }
+                HandleFollowMouse(frameScale);
+                return;
             }
 
             if (_currentState == PetState.Intro || _currentState == PetState.Clicked || _currentState == PetState.Outro || _currentState == PetState.WakeUp || _currentState == PetState.Notification || _currentState == PetState.Satisfied)
@@ -633,6 +607,91 @@ namespace VirtualPeto
                     
                 }
             }
+        }
+
+        private void HandleFollowMouse(double frameScale)
+        {
+            GetCursorPos(out POINT cursorPoint);
+            var source = PresentationSource.FromVisual(this);
+            Point cursorDip = source != null
+                ? source.CompositionTarget.TransformFromDevice.Transform(new Point(cursorPoint.X, cursorPoint.Y))
+                : new Point(cursorPoint.X, cursorPoint.Y);
+
+            double targetLeft = cursorDip.X - (Width / 2.0);
+            double targetTop = cursorDip.Y - (Height / 2.0);
+            double dx = targetLeft - Left;
+            double dy = targetTop - Top;
+            double distance = Math.Sqrt(dx * dx + dy * dy);
+
+            if (distance <= 2)
+            {
+                _vx = 0;
+                _vy = 0;
+                if (_currentState == PetState.Walking || _currentState == PetState.Running)
+                {
+                    SetState(PetState.Idle);
+                }
+                return;
+            }
+
+            bool shouldRun = distance >= 140;
+            double movementSpeed = shouldRun ? RunSpeed * 1.7 : WalkSpeed * 1.8;
+            double step = Math.Min(distance, movementSpeed * frameScale);
+            double normalizedX = dx / distance;
+            double normalizedY = dy / distance;
+            Left += normalizedX * step;
+            Top += normalizedY * step;
+            _vx = normalizedX * movementSpeed;
+            _vy = normalizedY * movementSpeed;
+
+            PetState targetState = shouldRun ? PetState.Running : PetState.Walking;
+            if (_currentState != targetState)
+            {
+                SetState(targetState);
+            }
+
+            UpdateMovementAnimationFromDirection(dx, dy, shouldRun);
+        }
+
+        private void UpdateMovementAnimationFromDirection(double dx, double dy, bool useRunAnimation)
+        {
+            double absX = Math.Abs(dx);
+            double absY = Math.Abs(dy);
+            if (absX < 0.5 && absY < 0.5)
+            {
+                return;
+            }
+
+            string prefix = useRunAnimation ? "Run" : "Walk";
+            string key;
+            const double axisPriority = 1.35;
+
+            if (absX >= absY * axisPriority)
+            {
+                key = dx >= 0 ? $"{prefix}_Right" : $"{prefix}_Left";
+            }
+            else if (absY >= absX * axisPriority)
+            {
+                key = dy >= 0 ? $"{prefix}_Down" : $"{prefix}_Up";
+            }
+            else if (dx >= 0 && dy >= 0)
+            {
+                key = $"{prefix}_DownRight";
+            }
+            else if (dx < 0 && dy >= 0)
+            {
+                key = $"{prefix}_DownLeft";
+            }
+            else if (dx >= 0 && dy < 0)
+            {
+                key = $"{prefix}_UpRight";
+            }
+            else
+            {
+                key = $"{prefix}_UpLeft";
+            }
+
+            ChangeAnimation(GetAnimOrDefault(key));
         }
 
         private bool ProcessObjectInteraction(double frameScale)
