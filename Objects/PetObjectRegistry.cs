@@ -9,6 +9,7 @@ namespace VirtualPeto.Objects
     {
         private static readonly List<PetInteractableObject> _objects = new List<PetInteractableObject>();
         private static readonly object _sync = new object();
+        private static JukeboxObject? _activeJukebox;
 
         public static void Register(PetInteractableObject obj)
         {
@@ -63,10 +64,17 @@ namespace VirtualPeto.Objects
 
         public static JukeboxObject SpawnJukebox(Rect allowedArea, Random random, Point nearPoint)
         {
-            JukeboxObject jukebox = new JukeboxObject();
-            PlaceObject(jukebox, allowedArea, random, nearPoint);
-            jukebox.Show();
-            return jukebox;
+            if (_activeJukebox != null && _activeJukebox.IsLoaded)
+            {
+                _activeJukebox.Activate();
+                return _activeJukebox;
+            }
+
+            _activeJukebox = new JukeboxObject();
+            PlaceObject(_activeJukebox, allowedArea, random, nearPoint);
+            _activeJukebox.Closed += (_, __) => _activeJukebox = null;
+            _activeJukebox.Show();
+            return _activeJukebox;
         }
 
         private static void PlaceObject(Window obj, Rect allowedArea, Random random, Point nearPoint)

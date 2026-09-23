@@ -47,9 +47,6 @@ namespace VirtualPeto.Objects
 
             try
             {
-                // 3. AQUÍ VA TU LÓGICA DE GUARDADO (.vfood)
-                // Por ahora, mostraremos un mensaje simulando que se guardó.
-                // Dependiendo de tu sistema, aquí podrías empaquetar la imagen y un archivo JSON/XML en un ZIP (.vfood).
                 
                 string debugMessage = $"Food Created Successfully!\n\n" +
                                       $"Name: {foodName}\n" +

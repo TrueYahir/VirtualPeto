@@ -281,9 +281,10 @@ namespace VirtualPeto
             ChkLockPet.IsChecked = SettingsManager.Current.LockPetPosition;
             ChkPlaySounds.IsChecked = SettingsManager.Current.AllowSounds;
             ChkSecondMonitor.IsChecked = SettingsManager.Current.AllowSecondMonitor;
-            
+
             TxtPetLimit.Text = SettingsManager.Current.DesktopPetLimit.ToString();
             TxtSleepTime.Text = SettingsManager.Current.SleepTimeMinutes.ToString();
+
             if (TxtDefaultFolder != null && !string.IsNullOrEmpty(SettingsManager.Current.DefaultSaveFolder))
             {
                 TxtDefaultFolder.Text = SettingsManager.Current.DefaultSaveFolder;
@@ -292,7 +293,16 @@ namespace VirtualPeto
             {
                 TxtJukeboxMusicFolder.Text = SettingsManager.Current.JukeboxMusicFolder;
             }
+            if (TxtJukeboxVisualPath != null && !string.IsNullOrEmpty(SettingsManager.Current.JukeboxVisualPath))
+            {
+                TxtJukeboxVisualPath.Text = SettingsManager.Current.JukeboxVisualPath;
+            }
+            if (TxtJukeboxSize != null)
+            {
+                TxtJukeboxSize.Text = SettingsManager.Current.JukeboxSize.ToString();
+            }
         }
+
         protected override void OnClosing(CancelEventArgs e)
         {
             int activePets = System.Windows.Application.Current.Windows.Count - 1;
@@ -1870,6 +1880,41 @@ namespace VirtualPeto
             }
         }
 
+        private void BtnBrowseJukeboxVisual_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog dialog = new OpenFileDialog
+            {
+                Title = "Select jukebox design file",
+                Filter = "Visual files|*.gif;*.png;*.jpg;*.jpeg;*.bmp;*.webp;*.mp4;*.webm;*.avi;*.mkv;*.mov;*.wmv|All files|*.*"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                TxtJukeboxVisualPath.Text = dialog.FileName;
+                SettingsManager.Current.JukeboxVisualPath = dialog.FileName;
+                SettingsManager.Save();
+            }
+        }
+        private void BtnDecreaseJukeboxSize_Click(object sender, RoutedEventArgs e)
+        {
+            if (SettingsManager.Current.JukeboxSize > 50)
+            {
+                SettingsManager.Current.JukeboxSize -= 10;
+                TxtJukeboxSize.Text = SettingsManager.Current.JukeboxSize.ToString();
+                SettingsManager.Save();
+            }
+        }
+
+        private void BtnIncreaseJukeboxSize_Click(object sender, RoutedEventArgs e)
+        {
+            if (SettingsManager.Current.JukeboxSize < 500)
+            {
+                SettingsManager.Current.JukeboxSize += 10;
+                TxtJukeboxSize.Text = SettingsManager.Current.JukeboxSize.ToString();
+                SettingsManager.Save();
+            }
+        }
+
         private void BtnBrowseJukeboxFolder_Click(object sender, RoutedEventArgs e)
         {
             using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
@@ -1915,3 +1960,8 @@ namespace VirtualPeto
 
     }
 }
+
+
+
+
+

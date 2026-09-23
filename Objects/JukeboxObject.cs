@@ -1,5 +1,5 @@
-using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -7,229 +7,319 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Interop;
 using WpfAnimatedGif;
 
 namespace VirtualPeto.Objects
 {
     public class JukeboxObject : PetWindowBase
     {
-        private MediaPlayer _mediaPlayer;
-        public bool IsPlaying { get; private set; } = false;
-        private Image _gifImage;
-        private MenuItem _playMenuItem = null!;
-        private MenuItem _muteMenuItem = null!;
+        private readonly MediaPlayer _mediaPlayer = new MediaPlayer();
+        private readonly Image _visualImage = new Image();
+        private readonly MediaElement _visualVideo = new MediaElement();
+        private readonly Border _fallbackVisual = new Border();
+
+        private readonly List<string> _playlist = new List<string>();
+        private int _currentTrackIndex = -1;
+        private JukeboxPlaylistWindow? _playerWindow;
+
+        public bool IsPlaying { get; private set; }
+        public bool IsMuted => _mediaPlayer.IsMuted;
+        public double Volume => _mediaPlayer.Volume;
+        public string CurrentTrackName { get; private set; } = "No track selected";
+        public event Action? PlaybackStateChanged;
 
         public JukeboxObject()
         {
-            this.SizeToContent = SizeToContent.WidthAndHeight;
+            Width = SettingsManager.Current.JukeboxSize > 0 ? SettingsManager.Current.JukeboxSize : 150;
+            Height = Width;
+            ResizeMode = ResizeMode.NoResize;
+            ShowInTaskbar = false;
+            Topmost = true;
 
-            _mediaPlayer = new MediaPlayer();
-            _mediaPlayer.MediaEnded += (s, e) =>
+            BuildObjectVisual();
+            LoadVisualFromSettings();
+            LoadPlaylist();
+
+            _mediaPlayer.MediaEnded += (_, __) => PlayNext();
+            _mediaPlayer.Volume = 0.5;
+
+            MouseRightButtonUp += JukeboxObject_MouseRightButtonUp;
+
+            ContextMenu = new ContextMenu();
+            var openPlayer = new MenuItem { Header = "Playlist" };
+            openPlayer.Click += (_, __) => OpenPlayerWindow();
+            var closeItem = new MenuItem { Header = "Close Jukebox" };
+            closeItem.Click += (_, __) => Close();
+            ContextMenu.Items.Add(openPlayer);
+            ContextMenu.Items.Add(closeItem);
+        }
+
+        private void BuildObjectVisual()
+        {
+            var root = new Grid();
+
+            _visualImage.Stretch = Stretch.Uniform;
+            _visualImage.HorizontalAlignment = HorizontalAlignment.Stretch;
+            _visualImage.VerticalAlignment = VerticalAlignment.Stretch;
+
+            _visualVideo.Stretch = Stretch.Uniform;
+            _visualVideo.LoadedBehavior = MediaState.Manual;
+            _visualVideo.UnloadedBehavior = MediaState.Manual;
+            _visualVideo.IsHitTestVisible = false;
+            _visualVideo.MediaEnded += (_, __) =>
             {
-                _mediaPlayer.Position = TimeSpan.Zero;
-                _mediaPlayer.Play();
+                if (_visualVideo.Source != null)
+                {
+                    _visualVideo.Position = TimeSpan.Zero;
+                    _visualVideo.Play();
+                }
             };
 
-            Grid container = new Grid();
-
-            _gifImage = new Image
+            _fallbackVisual.CornerRadius = new CornerRadius(12);
+            _fallbackVisual.Background = new SolidColorBrush(Color.FromRgb(28, 28, 40));
+            _fallbackVisual.BorderBrush = new SolidColorBrush(Color.FromRgb(92, 92, 116));
+            _fallbackVisual.BorderThickness = new Thickness(2);
+            _fallbackVisual.Child = new TextBlock
             {
-                Stretch = Stretch.None,
+                Text = "J",
+                Foreground = Brushes.White,
+                FontSize = 34,
+                FontWeight = FontWeights.Bold,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
 
-            string gifPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Jukebox", "Original", "Jukebox.gif");
-            if (File.Exists(gifPath))
-            {
-                BitmapImage bmp = new BitmapImage();
-                bmp.BeginInit();
-                bmp.UriSource = new Uri(gifPath, UriKind.Absolute);
-                bmp.CacheOption = BitmapCacheOption.OnLoad;
-                bmp.EndInit();
-                ImageBehavior.SetAnimatedSource(_gifImage, bmp);
-            }
-            else
-            {
-                TextBlock icon = new TextBlock
-                {
-                    Text = "🎵",
-                    Foreground = Brushes.White,
-                    FontSize = 28,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-                container.Children.Add(new Border
-                {
-                    Width = 60,
-                    Height = 60,
-                    CornerRadius = new CornerRadius(10),
-                    Background = new SolidColorBrush(Color.FromRgb(30, 30, 40)),
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(120, 80, 180)),
-                    BorderThickness = new Thickness(2),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                });
-                container.Children.Add(icon);
-            }
+            root.Children.Add(_fallbackVisual);
+            root.Children.Add(_visualImage);
+            root.Children.Add(_visualVideo);
 
-            container.Children.Add(_gifImage);
-            Content = container;
-
-            BuildContextMenu();
+            Content = root;
         }
 
-        private void BuildContextMenu()
+        private void JukeboxObject_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
-            ContextMenu contextMenu = new ContextMenu();
-
-            _playMenuItem = new MenuItem { Header = "Play" };
-            _playMenuItem.Click += PlayMenuItem_Click;
-
-            _muteMenuItem = new MenuItem { Header = "Mute" };
-            _muteMenuItem.Click += MuteMenuItem_Click;
-
-            MenuItem volumeControlItem = new MenuItem();
-            StackPanel volPanel = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            TextBlock volIcon = new TextBlock { Text = "🔊", Foreground = Brushes.White, FontSize = 14, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
-            TextBlock volText = new TextBlock { Text = "Volume: 50%", Foreground = Brushes.White, Width = 80, VerticalAlignment = VerticalAlignment.Center };
-            Slider volSlider = new Slider 
-            { 
-                Width = 100, 
-                Minimum = 0, 
-                Maximum = 1, 
-                Value = 0.5, 
-                VerticalAlignment = VerticalAlignment.Center,
-                IsSnapToTickEnabled = true,
-                TickFrequency = 0.05
-            };
-            
-            volSlider.ValueChanged += (s, e) => 
-            {
-                _mediaPlayer.Volume = volSlider.Value;
-                volText.Text = $"Volume: {(int)(volSlider.Value * 100)}%";
-            };
-
-            volPanel.Children.Add(volIcon);
-            volPanel.Children.Add(volText);
-            volPanel.Children.Add(volSlider);
-            volumeControlItem.Header = volPanel;
-
-            MenuItem playlistMenuItem = new MenuItem { Header = "Playlist" };
-            playlistMenuItem.Click += PlaylistMenuItem_Click;
-
-            MenuItem closeMenuItem = new MenuItem { Header = "Close" };
-            closeMenuItem.Click += (s, e) => this.Close();
-
-            contextMenu.Items.Add(_playMenuItem);
-            contextMenu.Items.Add(_muteMenuItem);
-            contextMenu.Items.Add(volumeControlItem);
-            contextMenu.Items.Add(playlistMenuItem);
-            contextMenu.Items.Add(closeMenuItem);
-
-            contextMenu.Opened += ContextMenu_Opened;
-
-            this.ContextMenu = contextMenu;
+            ContextMenu.IsOpen = true;
+            e.Handled = true;
         }
 
-        private void ContextMenu_Opened(object sender, RoutedEventArgs e)
+        private void OpenPlayerWindow()
         {
-            if (sender is ContextMenu menu)
+            if (_playerWindow == null || !_playerWindow.IsLoaded)
             {
-                menu.PlacementTarget = this;
-                menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Right;
-                menu.HorizontalOffset = 8;
-                menu.VerticalOffset = 0;
-
-                if (PresentationSource.FromVisual(menu) is HwndSource hwndSource)
-                {
-                    SetWindowPos(hwndSource.Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-                }
+                _playerWindow = new JukeboxPlaylistWindow(this);
+                _playerWindow.Closed += (_, __) => _playerWindow = null;
+                _playerWindow.Show();
+                return;
             }
+
+            _playerWindow.Activate();
         }
 
-        private void PlaylistMenuItem_Click(object sender, RoutedEventArgs e)
+        private void LoadPlaylist()
         {
-            JukeboxPlaylistWindow playlistWindow = new JukeboxPlaylistWindow(this);
-            playlistWindow.Show();
+            string folder = SettingsManager.Current.JukeboxMusicFolder;
+            _playlist.Clear();
+            _currentTrackIndex = -1;
+
+            if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder))
+            {
+                RaisePlaybackChanged();
+                return;
+            }
+
+            _playlist.AddRange(Directory.GetFiles(folder, "*.mp3")
+                .Concat(Directory.GetFiles(folder, "*.wav"))
+                .Concat(Directory.GetFiles(folder, "*.m4a"))
+                .Concat(Directory.GetFiles(folder, "*.wma"))
+                .OrderBy(x => x)
+                .Select(Path.GetFileName)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!));
+
+            if (_playlist.Count > 0)
+            {
+                _currentTrackIndex = 0;
+            }
+
+            RaisePlaybackChanged();
+        }
+
+        public IReadOnlyList<string> GetPlaylist() => _playlist;
+
+        public void ReloadPlaylist()
+        {
+            LoadPlaylist();
         }
 
         public void PlaySpecificSong(string path)
         {
-            if (File.Exists(path))
+            if (!File.Exists(path))
             {
-                _mediaPlayer.Stop();
-                _mediaPlayer.Open(new Uri(path));
-                _mediaPlayer.Play();
-                IsPlaying = true;
-                _playMenuItem.Header = "Pause";
+                return;
             }
+
+            _mediaPlayer.Stop();
+            _mediaPlayer.Open(new Uri(path, UriKind.Absolute));
+            _mediaPlayer.Play();
+
+            IsPlaying = true;
+            CurrentTrackName = Path.GetFileName(path);
+
+            int idx = _playlist.FindIndex(x => string.Equals(x, CurrentTrackName, StringComparison.OrdinalIgnoreCase));
+            if (idx >= 0)
+            {
+                _currentTrackIndex = idx;
+            }
+
+            RaisePlaybackChanged();
         }
 
-        private void PlayMenuItem_Click(object sender, RoutedEventArgs e)
+        public void TogglePlayPause()
         {
             if (IsPlaying)
             {
                 _mediaPlayer.Pause();
                 IsPlaying = false;
-                _playMenuItem.Header = "Play";
+                RaisePlaybackChanged();
+                return;
             }
-            else
+
+            if (_mediaPlayer.Source == null)
             {
-                if (_mediaPlayer.Source == null)
+                if (_currentTrackIndex < 0 && _playlist.Count > 0)
                 {
-                    LoadRandomMusic();
+                    _currentTrackIndex = 0;
                 }
 
-                if (_mediaPlayer.Source != null)
+                if (_currentTrackIndex >= 0 && _currentTrackIndex < _playlist.Count)
                 {
-                    _mediaPlayer.Play();
-                    IsPlaying = true;
-                    _playMenuItem.Header = "Pause";
+                    string folder = SettingsManager.Current.JukeboxMusicFolder;
+                    string fullPath = Path.Combine(folder, _playlist[_currentTrackIndex]);
+                    PlaySpecificSong(fullPath);
+                    return;
                 }
+
+                return;
             }
+
+            _mediaPlayer.Play();
+            IsPlaying = true;
+            RaisePlaybackChanged();
         }
 
-        private void MuteMenuItem_Click(object sender, RoutedEventArgs e)
+        public void PlayNext()
+        {
+            if (_playlist.Count == 0)
+            {
+                return;
+            }
+
+            _currentTrackIndex = _currentTrackIndex >= 0 ? (_currentTrackIndex + 1) % _playlist.Count : 0;
+            string folder = SettingsManager.Current.JukeboxMusicFolder;
+            PlaySpecificSong(Path.Combine(folder, _playlist[_currentTrackIndex]));
+        }
+
+        public void PlayPrevious()
+        {
+            if (_playlist.Count == 0)
+            {
+                return;
+            }
+
+            _currentTrackIndex = _currentTrackIndex >= 0 ? (_currentTrackIndex - 1 + _playlist.Count) % _playlist.Count : _playlist.Count - 1;
+            string folder = SettingsManager.Current.JukeboxMusicFolder;
+            PlaySpecificSong(Path.Combine(folder, _playlist[_currentTrackIndex]));
+        }
+
+        public void ToggleMute()
         {
             _mediaPlayer.IsMuted = !_mediaPlayer.IsMuted;
-            _muteMenuItem.Header = _mediaPlayer.IsMuted ? "Unmute" : "Mute";
+            RaisePlaybackChanged();
         }
 
-        private void LoadRandomMusic()
+        public void SetVolume(double value)
         {
-            string musicFolder = VirtualPeto.SettingsManager.Current.JukeboxMusicFolder;
-            if (!string.IsNullOrEmpty(musicFolder) && Directory.Exists(musicFolder))
-            {
-                string[] songs = Directory.GetFiles(musicFolder, "*.mp3")
-                    .Concat(Directory.GetFiles(musicFolder, "*.wav"))
-                    .Concat(Directory.GetFiles(musicFolder, "*.m4a"))
-                    .Concat(Directory.GetFiles(musicFolder, "*.wma"))
-                    .ToArray();
+            _mediaPlayer.Volume = Math.Max(0, Math.Min(1, value));
+            RaisePlaybackChanged();
+        }
 
-                if (songs.Length > 0)
+        public int GetCurrentTrackIndex() => _currentTrackIndex;
+
+        private void RaisePlaybackChanged()
+        {
+            PlaybackStateChanged?.Invoke();
+        }
+
+        private void LoadVisualFromSettings()
+        {
+            _visualVideo.Stop();
+            _visualVideo.Source = null;
+            _visualVideo.Visibility = Visibility.Collapsed;
+            _visualImage.Visibility = Visibility.Collapsed;
+            ImageBehavior.SetAnimatedSource(_visualImage, null);
+            _visualImage.Source = null;
+            _fallbackVisual.Visibility = Visibility.Visible;
+
+            string selectedPath = SettingsManager.Current.JukeboxVisualPath;
+            if (string.IsNullOrWhiteSpace(selectedPath))
+            {
+                selectedPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Jukebox", "Original", "Jukebox.gif");
+            }
+
+            if (string.IsNullOrWhiteSpace(selectedPath) || !File.Exists(selectedPath))
+            {
+                return;
+            }
+
+            string ext = Path.GetExtension(selectedPath).ToLowerInvariant();
+            try
+            {
+                if (ext == ".mp4" || ext == ".webm" || ext == ".avi" || ext == ".mkv" || ext == ".wmv" || ext == ".mov")
                 {
-                    Random rng = new Random();
-                    string picked = songs[rng.Next(songs.Length)];
-                    _mediaPlayer.Open(new Uri(picked));
+                    _visualVideo.Source = new Uri(selectedPath, UriKind.Absolute);
+                    _visualVideo.Visibility = Visibility.Visible;
+                    _fallbackVisual.Visibility = Visibility.Collapsed;
+                    _visualVideo.Play();
+                    return;
+                }
+
+                var bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.UriSource = new Uri(selectedPath, UriKind.Absolute);
+                bmp.EndInit();
+                bmp.Freeze();
+
+                _visualImage.Visibility = Visibility.Visible;
+                _fallbackVisual.Visibility = Visibility.Collapsed;
+
+                if (ext == ".gif")
+                {
+                    ImageBehavior.SetAnimatedSource(_visualImage, bmp);
                 }
                 else
                 {
-                    MessageBox.Show("There's no music selected.", "Jukebox", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _visualImage.Source = bmp;
                 }
             }
-            else
+            catch
             {
-                MessageBox.Show("There's no valid music folder configured. Go to settings to choose one.", "Jukebox", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _visualImage.Visibility = Visibility.Collapsed;
+                _visualVideo.Visibility = Visibility.Collapsed;
+                _fallbackVisual.Visibility = Visibility.Visible;
             }
         }
 
         protected override void OnClosed(EventArgs e)
         {
+            _playerWindow?.Close();
             _mediaPlayer.Stop();
             _mediaPlayer.Close();
+            _visualVideo.Stop();
             base.OnClosed(e);
         }
     }
 }
+
+
+

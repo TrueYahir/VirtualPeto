@@ -13,7 +13,9 @@ namespace VirtualPeto
         public int DesktopPetLimit { get; set; } = 5;
         public int SleepTimeMinutes { get; set; } = 15;
         public bool StartFavoritesOnStartup { get; set; } = false;
-        public string DefaultSaveFolder{get; set;} = string.Empty;
+        public string DefaultSaveFolder { get; set; } = string.Empty;
         public string JukeboxMusicFolder { get; set; } = string.Empty;
+        public string JukeboxVisualPath { get; set; } = string.Empty;
+        public int JukeboxSize { get; set; } = 150;
     }
 }

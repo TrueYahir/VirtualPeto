@@ -176,3 +176,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.4] - 2026-09-02
 ### Fixed
 - Fixed the following mouse animations
+
+## [1.0] - 2026-09-22
+### Changed
+- Se realizarón cambios en el menú de la jukebox.
+- Se optimizó el lanzamiento de la jukebox.

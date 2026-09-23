@@ -55,7 +55,6 @@ namespace VirtualPeto.Tools
             ofd.FileName = "Select Folder";
             ofd.Title = "Select Output Directory";
 
-            // --- NUEVO CÓDIGO: Iniciar el diálogo en la carpeta por defecto ---
             if (!string.IsNullOrWhiteSpace(TxtOutputFolder.Text) && Directory.Exists(TxtOutputFolder.Text))
             {
                 ofd.InitialDirectory = TxtOutputFolder.Text;
