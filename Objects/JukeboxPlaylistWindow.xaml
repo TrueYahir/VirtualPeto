@@ -1,11 +1,64 @@
 ﻿<Window x:Class="VirtualPeto.Objects.JukeboxPlaylistWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Jukebox Player" Height="430" Width="460"
+        Title="Jukebox Player" Height="460" Width="460"
         Background="#1A1A24"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         KeyDown="Window_KeyDown">
+    <Window.Resources>
+        <Style x:Key="CircularButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="44"/>
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="Background" Value="#2C2C3A"/>
+            <Setter Property="BorderBrush" Value="#808098"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="22">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3D3D4F"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#1A1A24"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="LargeCircularButtonStyle" TargetType="Button" BasedOn="{StaticResource CircularButtonStyle}">
+            <Setter Property="Width" Value="56"/>
+            <Setter Property="Height" Value="56"/>
+            <Setter Property="Background" Value="#4964D2"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="28">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#5A75E3"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
     <Border Margin="10" Padding="12" Background="#1F1F2A" BorderBrush="#5A5A70" BorderThickness="1" CornerRadius="10">
         <Grid>
             <Grid.RowDefinitions>
@@ -22,28 +75,35 @@
                 <ListBox x:Name="SongsList" Background="#191920" Foreground="White" BorderThickness="0" SelectionChanged="SongsList_SelectionChanged"/>
             </Border>
 
-            <TextBlock x:Name="TxtStatus" Grid.Row="2" Text="Ready" Foreground="#B4B4C8" FontSize="12" Margin="0,0,0,8"/>
+            <TextBlock x:Name="TxtStatus" Grid.Row="2" Text="Ready" Foreground="#B4B4C8" FontSize="12" Margin="0,0,0,12" HorizontalAlignment="Center"/>
 
-            <Grid Grid.Row="3" Margin="0,0,0,10">
+            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
+                <Button x:Name="BtnPrev" Style="{StaticResource CircularButtonStyle}" Click="BtnPrev_Click" Margin="0,0,15,0">
+                    <Image Source="/Assets/Buttons/btn_back.png" Width="20" Height="20" Stretch="Uniform"/>
+                </Button>
+                
+                <Button x:Name="BtnPlayPause" Style="{StaticResource LargeCircularButtonStyle}" Click="BtnPlayPause_Click" Margin="0,0,15,0">
+                    <Image x:Name="ImgPlayPause" Source="/Assets/Buttons/btn_play.png" Width="26" Height="26" Stretch="Uniform"/>
+                </Button>
+                
+                <Button x:Name="BtnNext" Style="{StaticResource CircularButtonStyle}" Click="BtnNext_Click">
+                    <Image Source="/Assets/Buttons/btn_next.png" Width="20" Height="20" Stretch="Uniform"/>
+                </Button>
+            </StackPanel>
+
+            <Grid Grid.Row="4" Margin="10,0,10,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <Button x:Name="BtnPrev" Grid.Column="0" Content="Prev" Click="BtnPrev_Click" Padding="10,6" Margin="0,0,8,0" Background="#2C2C3A" Foreground="White" BorderBrush="#808098" BorderThickness="1"/>
-                <Button x:Name="BtnPlayPause" Grid.Column="1" Content="Play" Click="BtnPlayPause_Click" Padding="18,7" Margin="0,0,8,0" Background="#4964D2" Foreground="White" BorderThickness="0"/>
-                <Button x:Name="BtnNext" Grid.Column="2" Content="Next" Click="BtnNext_Click" Padding="10,6" Margin="0,0,8,0" Background="#2C2C3A" Foreground="White" BorderBrush="#808098" BorderThickness="1"/>
-                <Button x:Name="BtnMute" Grid.Column="3" Content="Mute" Click="BtnMute_Click" Padding="10,6" Background="#2C2C3A" Foreground="White" BorderBrush="#808098" BorderThickness="1"/>
-            </Grid>
-
-            <Grid Grid.Row="4">
-                <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="TxtVolume" Grid.Column="0" Text="Volume: 50%" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <Slider x:Name="SldVolume" Grid.Column="1" Minimum="0" Maximum="1" Value="0.5" TickFrequency="0.05" IsSnapToTickEnabled="True" ValueChanged="SldVolume_ValueChanged"/>
+                
+                <Button x:Name="BtnMute" Grid.Column="0" Style="{StaticResource CircularButtonStyle}" Click="BtnMute_Click" Margin="0,0,10,0">
+                    <Image x:Name="ImgMute" Source="/Assets/Buttons/btn_sound.png" Width="20" Height="20" Stretch="Uniform"/>
+                </Button>
+                
+                <TextBlock x:Name="TxtVolume" Grid.Column="1" Text="Volume: 50%" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0" Width="85"/>
+                <Slider x:Name="SldVolume" Grid.Column="2" Minimum="0" Maximum="1" Value="0.5" TickFrequency="0.05" IsSnapToTickEnabled="True" ValueChanged="SldVolume_ValueChanged" VerticalAlignment="Center"/>
             </Grid>
         </Grid>
     </Border>

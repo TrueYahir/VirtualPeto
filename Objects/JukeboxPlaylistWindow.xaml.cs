@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 
 namespace VirtualPeto.Objects
 {
@@ -36,8 +37,15 @@ namespace VirtualPeto.Objects
         {
             TxtCurrentSong.Text = _jukebox.CurrentTrackName;
             TxtStatus.Text = _jukebox.IsPlaying ? "Playing" : "Paused";
-            BtnPlayPause.Content = _jukebox.IsPlaying ? "Pause" : "Play";
-            BtnMute.Content = _jukebox.IsMuted ? "Unmute" : "Mute";
+            
+            ImgPlayPause.Source = _jukebox.IsPlaying 
+                ? new BitmapImage(new Uri("pack://application:,,,/Assets/Buttons/btn_pause.png")) 
+                : new BitmapImage(new Uri("pack://application:,,,/Assets/Buttons/btn_play.png"));
+
+            ImgMute.Source = _jukebox.IsMuted 
+                ? new BitmapImage(new Uri("pack://application:,,,/Assets/Buttons/btn_mute.png")) 
+                : new BitmapImage(new Uri("pack://application:,,,/Assets/Buttons/btn_sound.png"));
+
             TxtVolume.Text = $"Volume: {(int)Math.Round(_jukebox.Volume * 100)}%";
 
             _suppressVolumeChange = true;
@@ -110,4 +118,3 @@ namespace VirtualPeto.Objects
         }
     }
 }
-
