@@ -179,9 +179,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0] - 2026-09-22
 ### Changed
-- Se realizarón cambios en el menú de la jukebox.
-- Se optimizó el lanzamiento de la jukebox.
+- Changes on jukebox menu
+- Optimized the launch of the jukebox.
 
 ## [1.0] - 2026-09-24
 ### Added
 - Assets for music player were added.
+
+## [1.0] - 2026-10-10
+### Changed
+- Better visuals for the jukebox player.

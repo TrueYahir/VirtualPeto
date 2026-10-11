@@ -1,10 +1,30 @@
 ﻿using System;
+using System.Globalization;
+using System.IO;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
 namespace VirtualPeto.Objects
 {
+    public class FileNameConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is string fileName)
+            {
+                return Path.GetFileNameWithoutExtension(fileName);
+            }
+            return value;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     public partial class JukeboxPlaylistWindow : Window
     {
         private readonly JukeboxObject _jukebox;
@@ -35,7 +55,7 @@ namespace VirtualPeto.Objects
 
         private void RefreshUiFromJukebox()
         {
-            TxtCurrentSong.Text = _jukebox.CurrentTrackName;
+            TxtCurrentSong.Text = Path.GetFileNameWithoutExtension(_jukebox.CurrentTrackName);
             TxtStatus.Text = _jukebox.IsPlaying ? "Playing" : "Paused";
             
             ImgPlayPause.Source = _jukebox.IsPlaying 
@@ -46,7 +66,7 @@ namespace VirtualPeto.Objects
                 ? new BitmapImage(new Uri("pack://application:,,,/Assets/Buttons/btn_mute.png")) 
                 : new BitmapImage(new Uri("pack://application:,,,/Assets/Buttons/btn_sound.png"));
 
-            TxtVolume.Text = $"Volume: {(int)Math.Round(_jukebox.Volume * 100)}%";
+            TxtVolume.Text = $"{(int)Math.Round(_jukebox.Volume * 100)}%";
 
             _suppressVolumeChange = true;
             SldVolume.Value = _jukebox.Volume;
@@ -60,7 +80,7 @@ namespace VirtualPeto.Objects
             if (SongsList.SelectedItem is string selectedFile)
             {
                 string musicFolder = SettingsManager.Current.JukeboxMusicFolder;
-                string fullPath = System.IO.Path.Combine(musicFolder, selectedFile);
+                string fullPath = Path.Combine(musicFolder, selectedFile);
                 _jukebox.PlaySpecificSong(fullPath);
             }
         }
